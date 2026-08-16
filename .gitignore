@@ -1,0 +1,28 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+# Test and benchmark output
+TestResults/
+coverage/
+BenchmarkDotNet.Artifacts/
+
+# Editors
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# NuGet artifacts
+*.nupkg
+*.snupkg
+
+# Logs
+*.binlog
+
+# OS
+.DS_Store

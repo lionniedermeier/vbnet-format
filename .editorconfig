@@ -1,0 +1,29 @@
+root = true
+
+[*]
+charset = utf-8
+# LF everywhere, matching .gitattributes; the repository is already stored and checked out as LF.
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,props,targets,csproj,slnx}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+dotnet_sort_system_directives_first = true
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_style_namespace_match_folder = true
+
+# Test fixtures are deliberately badly formatted VB and must not be altered -- their bytes are
+# compared exactly, so no editor may normalize whitespace or line endings in them.
+[tests/**/TestData/*.vb]
+trim_trailing_whitespace = false
+insert_final_newline = false
+end_of_line = unset

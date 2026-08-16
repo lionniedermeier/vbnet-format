@@ -1,0 +1,10 @@
+<Project>
+
+  <!-- Imported after the project body, so IsPackable is already known here. The readme and the icon
+       live at the repository root and are packed into every package that ships. -->
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

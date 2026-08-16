@@ -1,0 +1,36 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Roslyn ships 13 satellite resource directories. This tool's own diagnostics are English
+         only, so none of them is ever shown; dropping them takes ~2 MB off every artifact. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package metadata">
+    <Authors>Lion Niedermeier</Authors>
+    <Copyright>Copyright (c) 2026 Lion Niedermeier</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/lionniedermeier/vbnet-format</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/lionniedermeier/vbnet-format.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>vb;vbnet;visual-basic;formatter;codestyle;roslyn;dotnet-tool</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Versioning">
+    <!-- Versions come from git tags (v1.2.3) via MinVer; there is no version in any file. -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

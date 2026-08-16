@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>vbnet-format</AssemblyName>
+    <RootNamespace>VisualBasicFormatter.Cli</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Only meaningful for an executable. The formatter itself sorts with OrdinalIgnoreCase, so
+         its output does not depend on the current culture either way. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VisualBasicFormatter\VisualBasicFormatter.csproj" />
+  </ItemGroup>
+
+</Project>

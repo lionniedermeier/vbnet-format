@@ -1,0 +1,11 @@
+# Normalize every text file to LF, in the repository and in the working tree, on every platform.
+# This overrides a contributor's core.autocrlf and keeps the repo byte-identical everywhere.
+* text=auto eol=lf
+
+# Golden fixtures keep the bytes they were committed with, so a fixture may deliberately be CRLF and
+# still survive checkout under any core.autocrlf. linguist-generated keeps GitHub's language stats
+# about the formatter rather than the VB it formats, at the cost of collapsing these diffs in PRs.
+tests/**/TestData/** -text linguist-generated=true
+
+*.png binary
+*.ico binary

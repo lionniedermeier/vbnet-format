@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VisualBasicFormatter.Cli/VisualBasicFormatter.Cli.csproj" />
+    <Project Path="src/VisualBasicFormatter/VisualBasicFormatter.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VisualBasicFormatter.Tests/VisualBasicFormatter.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>VisualBasicFormatter</RootNamespace>
+    <Description>A VB.NET source formatter that wraps long lines and long method signatures.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Brings in Microsoft.CodeAnalysis.VisualBasic (parser, SyntaxFactory) and transitively
+         Microsoft.CodeAnalysis.Workspaces.Common (Formatter, AdhocWorkspace). -->
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The IR, the printer and the per-node rules are internal; the tests exercise them directly. -->
+    <InternalsVisibleTo Include="VisualBasicFormatter.Tests" />
+  </ItemGroup>
+
+</Project>

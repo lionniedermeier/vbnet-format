@@ -22,6 +22,14 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>vb;vbnet;visual-basic;formatter;codestyle;roslyn;dotnet-tool</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Both files are packed by Directory.Build.targets. -->
+  </PropertyGroup>
+
+  <PropertyGroup Label="Source Link">
+    <!-- The GitHub Source Link provider ships in the SDK; no package reference needed. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <PropertyGroup Label="Source Link">

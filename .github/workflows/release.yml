@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: read
+  # Required for NuGet Trusted Publishing: the job exchanges a short-lived OIDC token for a
+  # temporary API key, so no long-lived NUGET_API_KEY secret exists to leak.
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # fetch-depth 0: MinVer reads the tag being built out of the history.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet build -c Release
+
+      # The tag is only worth publishing if the suite it points at is green.
+      - run: dotnet test --project tests/VisualBasicFormatter.Tests -c Release
+
+      - run: dotnet pack -c Release -o artifacts
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: packages
+          path: artifacts/*.*nupkg
+          if-no-files-found: error
+
+      # Requires a Trusted Publishing policy configured on nuget.org for this repository.
+      - uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - run: >
+          dotnet nuget push "artifacts/*.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --skip-duplicate

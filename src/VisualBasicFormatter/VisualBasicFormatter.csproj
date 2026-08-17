@@ -3,6 +3,9 @@
   <PropertyGroup>
     <RootNamespace>VisualBasicFormatter</RootNamespace>
     <Description>A VB.NET source formatter that wraps long lines and long method signatures.</Description>
+    <!-- The engine ships inside the vbnet-format tool package, which carries its own copy of this
+         assembly. Publishing it separately would make its surface a public API to keep stable. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

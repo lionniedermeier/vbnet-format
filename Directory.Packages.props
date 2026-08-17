@@ -10,7 +10,7 @@
   </ItemGroup>
   <ItemGroup Label="Build">
     <!-- Derives the version from the nearest git tag; there is no version stored in any file. -->
-    <PackageVersion Include="MinVer" Version="6.0.0" />
+    <PackageVersion Include="MinVer" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <!-- xunit v3 on the Microsoft.Testing.Platform; replaces the VSTest trio

@@ -24,8 +24,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
+  <PropertyGroup Label="Source Link">
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
   <PropertyGroup Label="Versioning">
-    <!-- Versions come from git tags (v1.2.3) via MinVer; there is no version in any file. -->
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 

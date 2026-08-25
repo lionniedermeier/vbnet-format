@@ -400,6 +400,55 @@ public sealed class VbFormatterTests
         Assert.EndsWith("If(", head!.TrimEnd());
     }
 
+    /// <summary>
+    /// The clauses of a query align under the keyword that opens it rather than hanging below the
+    /// statement, which is what the VB style guide asks for.
+    /// </summary>
+    [Fact]
+    public void AlignsQueryClausesUnderTheHead()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("XmlLiteralInline"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        var head = Array.FindIndex(lines, l => l.Contains("<%= From e In _employees", StringComparison.Ordinal));
+        Assert.True(head >= 0);
+
+        var column = lines[head].IndexOf("From", StringComparison.Ordinal);
+        Assert.Equal(new string(' ', column) + "Select", lines[head + 1][..(column + 6)]);
+    }
+
+    /// <summary>
+    /// A join too long for its line breaks in front of <c>On</c>, which is the one keyword inside a
+    /// query clause that a break is offered at.
+    /// </summary>
+    [Fact]
+    public void BreaksAJoinBeforeItsCondition()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LinqQueryClauses"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        var condition = Array.FindIndex(
+            lines,
+            l => l.TrimStart().StartsWith("On employee.ReportingManagerIdentifier", StringComparison.Ordinal));
+
+        Assert.True(condition > 0);
+        Assert.EndsWith("Join reportingManager In employees", lines[condition - 1]);
+    }
+
+    /// <summary>A join short enough for its line keeps its condition behind it.</summary>
+    [Fact]
+    public void LeavesAFittingJoinOnOneLine()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LinqQueryClauses"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.Contains(
+            lines,
+            l => l.TrimStart().StartsWith(
+                "Join department In departments On employee.DepartmentId",
+                StringComparison.Ordinal));
+    }
+
     /// <summary>A query breaks in front of its clause keywords, and needs no underscore for it.</summary>
     [Fact]
     public void BreaksAQueryBeforeTheClause()
@@ -409,6 +458,33 @@ public sealed class VbFormatterTests
 
         Assert.Contains(lines, l => l.TrimStart().StartsWith("Where employee.Salary", StringComparison.Ordinal));
         Assert.Contains(lines, l => l.TrimStart().StartsWith("Order By employee.Salary", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void KeepsAFittingQueryOnTheStatementLine()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LinqQuery"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.Contains(lines, l => l.Trim() == "Dim names = From employee In employees Select employee.Name");
+    }
+
+    [Fact]
+    public void HangsALongQueryBelowTheAssignment()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LinqQuery"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Contains("Dim quarterlyHeadcountByDepartment", StringComparison.Ordinal));
+
+        Assert.True(head >= 0);
+        Assert.EndsWith("=", lines[head]);
+
+        var query = lines[head + 1].TrimStart();
+        Assert.StartsWith("From employee In employees Where", query, StringComparison.Ordinal);
+        Assert.Contains("Select employee.Name", query, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -442,8 +518,9 @@ public sealed class VbFormatterTests
     }
 
     /// <summary>
-    /// The attributes of a tag align under the first one. This is the one place vbnet-format aligns
-    /// rather than indents, and it is not configurable -- see <c>docs/standard_format.md</c>.
+    /// The attributes of a tag align under the first one. vbnet-format aligns rather than indents only
+    /// where what is aligned under is stable -- a tag name, a query head -- and it is not configurable;
+    /// see <c>docs/standard_format.md</c>.
     /// </summary>
     [Fact]
     public void AlignsXmlAttributesUnderTheFirst()

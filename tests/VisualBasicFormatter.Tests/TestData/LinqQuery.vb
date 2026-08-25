@@ -11,6 +11,8 @@ Public Class QueryDemo
 
         ' Short enough to stay on one line.
         Dim names = From employee In employees Select employee.Name
+
+        Dim quarterlyHeadcountByDepartment = From employee In employees Where employee.IsActive Select employee.Name, employee.Department
     End Sub
 
 End Class

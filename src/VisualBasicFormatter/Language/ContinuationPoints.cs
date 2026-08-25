@@ -60,6 +60,7 @@ internal static class ContinuationPoints
             SyntaxKind.OpenParenToken => true,
             SyntaxKind.OpenBraceToken => true,
             SyntaxKind.DotToken => IsBreakableDot(token),
+            SyntaxKind.EqualsToken => token.Parent is EqualsValueSyntax or AssignmentStatementSyntax,
 
             // Legal, but it only puts the bracket alone on a line; the commas inside do the work.
             // Answered here rather than left out, because the comparison < is in Operators below.
@@ -70,9 +71,9 @@ internal static class ContinuationPoints
 
     /// <summary>
     /// Whether a line may end right in front of <paramref name="token"/>. VB continues implicitly
-    /// before a token in three places: the keyword that opens a query clause, a closing parenthesis
-    /// and a closing curly brace. The latter two are what let a list put its closing bracket on a
-    /// line of its own, below a block element that could not have stood behind it.
+    /// before a token in four places: the keyword that opens a query clause, the <c>On</c> of a join,
+    /// a closing parenthesis and a closing curly brace. The latter two are what let a list put its
+    /// closing bracket on a line of its own, below a block element that could not have stood behind it.
     /// </summary>
     public static bool IsImplicitBefore(SyntaxToken token)
     {
@@ -85,6 +86,11 @@ internal static class ContinuationPoints
         {
             SyntaxKind.CloseParenToken => true,
             SyntaxKind.CloseBraceToken => true,
+
+            // The collection being joined and the condition it is joined on are two thoughts, and a
+            // join is the one clause long enough that keeping them together costs something. The
+            // check on the parent is what leaves Option Strict On and On Error GoTo alone.
+            SyntaxKind.OnKeyword => token.Parent is JoinClauseSyntax,
             _ => IsQueryClauseHead(token),
         };
     }
@@ -129,8 +135,9 @@ internal static class ContinuationPoints
     /// <summary>
     /// Whether <paramref name="token"/> opens a query clause: the <c>From</c>, <c>Where</c>,
     /// <c>Select</c>, <c>Order</c>, <c>Group</c> and so on that a query is written one per line at.
-    /// The keywords inside a clause -- <c>In</c>, <c>Into</c>, <c>On</c> -- are continuation points
-    /// too, but breaking there splits a clause for no gain, so only its head is offered.
+    /// The keywords inside a clause -- <c>In</c>, <c>Into</c> -- are continuation points too, but
+    /// breaking there splits a clause for no gain, so only its head is offered. A join's <c>On</c> is
+    /// the exception, and <see cref="IsImplicitBefore"/> answers for it directly.
     /// </summary>
     private static bool IsQueryClauseHead(SyntaxToken token)
     {

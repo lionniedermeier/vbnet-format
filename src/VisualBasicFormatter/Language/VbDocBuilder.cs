@@ -150,7 +150,7 @@ internal static class VbDocBuilder
 
     /// <summary>
     /// A run whose head stays on the current line and whose continuation lines hang below it: a row
-    /// of equally ranked operators, or the clauses of a query.
+    /// of equally ranked operators.
     /// </summary>
     /// <param name="items">Content and separator in turn, starting and ending with content.</param>
     /// <param name="indent">

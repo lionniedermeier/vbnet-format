@@ -65,6 +65,15 @@ internal sealed class FormatContext
     public Doc BreakBefore(SyntaxToken token) =>
         ContinuationPoints.IsImplicitBefore(token) ? Doc.Line : Doc.Nothing;
 
+    /// <summary>
+    /// The same, for a place where the two tokens must stay apart even when the break is refused:
+    /// two keywords that would otherwise run together into a single word. Every other caller may
+    /// take <see cref="Doc.Nothing"/> for an answer, because a refused break there only costs a
+    /// layout -- here it would cost the code its meaning.
+    /// </summary>
+    public Doc SpacedBreakBefore(SyntaxToken token) =>
+        ContinuationPoints.IsImplicitBefore(token) ? Doc.Line : Doc.Space;
+
     /// <summary>The same, rendered as nothing while the group stays flat: in front of a closing bracket.</summary>
     public Doc SoftBreakBefore(SyntaxToken token) =>
         ContinuationPoints.IsImplicitBefore(token) ? Doc.SoftLine : Doc.Nothing;

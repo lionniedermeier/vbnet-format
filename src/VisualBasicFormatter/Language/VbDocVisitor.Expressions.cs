@@ -145,6 +145,24 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitQueryExpression(QueryExpressionSyntax node) =>
         QueryExpressionRule.Format(node, this, _context);
 
+    public override Doc VisitEqualsValue(EqualsValueSyntax node) =>
+        QueryAssignmentRule.Tail(node.EqualsToken, node.Value, this, _context)
+        ?? StructuralFallback.Format(node, this, _context);
+
+    public override Doc VisitAssignmentStatement(AssignmentStatementSyntax node) =>
+        !StructuralFallback.MustPrintVerbatim(node)
+        && QueryAssignmentRule.Tail(node.OperatorToken, node.Right, this, _context) is { } tail
+            ? Doc.Concat(Format(node.Left), Doc.Space, tail)
+            : StructuralFallback.Format(node, this, _context);
+
+    /// <inheritdoc cref="JoinClauseRule"/>
+    public override Doc VisitSimpleJoinClause(SimpleJoinClauseSyntax node) =>
+        JoinClauseRule.Format(node, this, _context);
+
+    /// <inheritdoc cref="JoinClauseRule"/>
+    public override Doc VisitGroupJoinClause(GroupJoinClauseSyntax node) =>
+        JoinClauseRule.Format(node, this, _context);
+
     /// <inheritdoc/>
     public override Doc VisitBinaryExpression(BinaryExpressionSyntax node) =>
         BinaryExpressionRule.IsRunHead(node)

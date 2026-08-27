@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\VisualBasicFormatter\VisualBasicFormatter.csproj" />
+    <ProjectReference Include="..\..\src\VisualBasicFormatter.Cli\VisualBasicFormatter.Cli.csproj" />
   </ItemGroup>
 
 </Project>

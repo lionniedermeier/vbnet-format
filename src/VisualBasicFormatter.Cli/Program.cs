@@ -11,6 +11,11 @@ internal static class Program
     private const int ExitWouldChange = 1;
     private const int ExitError = 2;
 
+    private const string IgnoreFileName = ".vbnet-formatignore";
+
+    private static readonly string[] AlwaysExcluded =
+        ["bin", "obj", "node_modules", ".git", ".svn", ".hg"];
+
     private static int Main(string[] args)
     {
         var paths = new Argument<string[]>("paths")
@@ -69,12 +74,28 @@ internal static class Program
             Description = "Path to a .vbnet-format.json.",
         };
 
+        var ignorePath = new Option<string[]>("--ignore-path")
+        {
+            Description = $"Path to a file of ignore patterns. Repeatable; replaces .gitignore and {IgnoreFileName}.",
+            Arity = ArgumentArity.ZeroOrMore,
+        };
+
+        var noRespectGitignore = new Option<bool>("--no-respect-gitignore")
+        {
+            Description = "Do not read .gitignore.",
+        };
+
+        var noIgnore = new Option<bool>("--no-ignore")
+        {
+            Description = "Read no ignore file at all.",
+        };
+
         var root = new RootCommand("vbnet-format - a formatter for VB.NET source.");
         root.Arguments.Add(paths);
         Option[] all =
         [
             check, diff, stdin, maxLineLength, indentSize, useTabs, endOfLine, languageVersion,
-            noOrganizeImports, config,
+            noOrganizeImports, config, ignorePath, noRespectGitignore, noIgnore,
         ];
 
         foreach (var option in all)
@@ -99,6 +120,11 @@ internal static class Program
                     ? RunStdin(options)
                     : RunFiles(
                         result.GetValue(paths) ?? [],
+                        DiscoverIgnores(
+                            Directory.GetCurrentDirectory(),
+                            result.GetValue(ignorePath) ?? [],
+                            !result.GetValue(noRespectGitignore),
+                            result.GetValue(noIgnore)),
                         options,
                         result.GetValue(check),
                         result.GetValue(diff));
@@ -178,6 +204,37 @@ internal static class Program
         return null;
     }
 
+    internal static IgnoreSet DiscoverIgnores(
+        string baseDirectory,
+        string[] ignorePaths,
+        bool respectGitignore,
+        bool noIgnore)
+    {
+        if (noIgnore)
+        {
+            return IgnoreSet.Empty;
+        }
+
+        if (ignorePaths.Length > 0)
+        {
+            return new IgnoreSet([.. ignorePaths.Select(IgnoreFile.Load)]);
+        }
+
+        var files = new List<IgnoreFile>();
+        string[] candidates = respectGitignore ? [".gitignore", IgnoreFileName] : [IgnoreFileName];
+
+        foreach (var candidate in candidates)
+        {
+            var path = Path.Combine(baseDirectory, candidate);
+            if (File.Exists(path))
+            {
+                files.Add(IgnoreFile.Load(path));
+            }
+        }
+
+        return new IgnoreSet(files);
+    }
+
     private static int RunStdin(FormatterOptions options)
     {
         var result = VbFormatter.Format(Console.In.ReadToEnd(), options);
@@ -191,11 +248,24 @@ internal static class Program
         return ExitOk;
     }
 
-    private static int RunFiles(string[] paths, FormatterOptions options, bool check, bool diff)
+    private static int RunFiles(
+        string[] paths,
+        IgnoreSet ignores,
+        FormatterOptions options,
+        bool check,
+        bool diff)
     {
-        var files = Resolve(paths).ToList();
+        var matched = Resolve(paths).ToList();
+        var files = matched.Where(file => !ignores.IsIgnored(file)).ToList();
+
         if (files.Count == 0)
         {
+            if (matched.Count > 0)
+            {
+                Console.Error.WriteLine("vbnet-format: all matching .vb files are ignored.");
+                return ExitOk;
+            }
+
             Console.Error.WriteLine("vbnet-format: no .vb files found.");
             return ExitError;
         }
@@ -242,7 +312,7 @@ internal static class Program
         return exitCode;
     }
 
-    private static IEnumerable<string> Resolve(string[] paths)
+    internal static IEnumerable<string> Resolve(string[] paths)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var effective = paths.Length > 0 ? paths : ["."];
@@ -271,8 +341,11 @@ internal static class Program
 
         var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
         matcher.AddInclude(pattern);
-        matcher.AddExclude("**/bin/**");
-        matcher.AddExclude("**/obj/**");
+
+        foreach (var excluded in AlwaysExcluded)
+        {
+            matcher.AddExclude($"**/{excluded}/**");
+        }
 
         return matcher.GetResultsInFullPath(root);
     }

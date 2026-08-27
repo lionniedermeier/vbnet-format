@@ -5,11 +5,19 @@ Imports <xmlns:ns="urn:example">
 Module Markup
 
     Public Function Sections() As XElement
-        Return <root><!-- a remark --><?process this?><![CDATA[ raw < text ]]><empty/></root>
+        Return <root>
+            <!-- a remark -->
+            <?process this?>
+            <![CDATA[ raw < text ]]>
+            <empty/>
+        </root>
     End Function
 
     Public Function Namespaced() As XElement
-        Return <ns:excerpt ns:kind="short"><ns:line/></ns:excerpt>
+        Return <ns:excerpt
+            ns:kind="short">
+            <ns:line/>
+        </ns:excerpt>
     End Function
 
     Public Function Empty() As XElement

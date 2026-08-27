@@ -12,10 +12,14 @@ namespace VisualBasicFormatter.Language.Xml;
 internal static class XmlElementRule
 {
     /// <summary>Lays out <paramref name="node"/>, whose content <see cref="XmlWhitespace"/> cleared.</summary>
-    public static Doc Format(XmlElementSyntax node, VbDocVisitor visitor, FormatContext context)
+    public static Doc Format(
+        XmlElementSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context,
+        bool broken)
     {
-        var start = visitor.Format(node.StartTag);
-        var end = visitor.Format(node.EndTag);
+        var start = XmlTagRule.Format(node.StartTag, visitor, context, broken);
+        var end = XmlTagRule.Format(node.EndTag, visitor, context);
 
         // Nothing between the tags means nothing to break for. The two breaks below would only put
         // the end tag on a line of its own.
@@ -24,22 +28,22 @@ internal static class XmlElementRule
             return Doc.Concat(start, end);
         }
 
-        // Children one indent level in, the end tag back at the start tag's own depth. Content is
-        // indented rather than aligned -- the opposite of the attributes in the tag, which
-        // <see cref="XmlTagRule"/> aligns -- because that is what the style reference specifies and
-        // what keeps a deeply placed literal from starving its own children of width.
-        return Doc.Group(
-            start,
-            Doc.Indent(context.XmlContentBreak(), Doc.Concat(Items(node.Content, visitor, context))),
-            context.XmlContentBreak(),
-            end);
+        var items = Items(node.Content, visitor, context, broken);
+
+        return broken
+            ? Doc.Concat(
+                start,
+                Doc.Indent(context.XmlContentBreak(broken), items),
+                context.XmlContentBreak(broken),
+                end)
+            : Doc.Concat(start, items, end);
     }
 
-    /// <summary>Child and separator in turn -- the shape a fill needs, and a concat accepts.</summary>
-    private static ImmutableArray<Doc> Items(
+    private static Doc Items(
         SyntaxList<XmlNodeSyntax> content,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context,
+        bool broken)
     {
         var items = ImmutableArray.CreateBuilder<Doc>();
 
@@ -47,12 +51,12 @@ internal static class XmlElementRule
         {
             if (items.Count > 0)
             {
-                items.Add(context.XmlContentBreak());
+                items.Add(context.XmlContentBreak(broken));
             }
 
             items.Add(visitor.Format(child));
         }
 
-        return items.DrainToImmutable();
+        return Doc.Concat(items.DrainToImmutable());
     }
 }

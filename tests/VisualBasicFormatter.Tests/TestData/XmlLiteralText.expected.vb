@@ -5,7 +5,9 @@ Module Prose
 
     Public Function Paragraph(title As String) As XElement
         Return <document>
-            <heading><%= title %></heading>
+            <heading>
+                <%= title %>
+            </heading>
             <body>A paragraph with plenty of text, so the line exceeds the limit and still stays as is.</body>
         </document>
     End Function

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Printing;
@@ -33,33 +32,10 @@ internal static class JoinClauseRule
         // fits there stays on one line and only a longer one breaks. The indent composes on top of
         // that same column.
         return Doc.Group(
-            Run(children.Take(on), visitor, context),
+            StructuralFallback.Run(children.Take(on), visitor, context),
             Doc.Indent(
                 context.SpacedBreakBefore(node.OnKeyword),
-                Run(children.Skip(on), visitor, context)));
-    }
-
-    /// <summary>A consecutive run of children, spaced the way the structural fallback spaces them.</summary>
-    private static Doc Run(
-        IEnumerable<SyntaxNodeOrToken> children,
-        VbDocVisitor visitor,
-        FormatContext context)
-    {
-        var parts = ImmutableArray.CreateBuilder<Doc>();
-        SyntaxNodeOrToken? previous = null;
-
-        foreach (var child in children)
-        {
-            if (previous is { } behind)
-            {
-                parts.Add(context.Gap(child.SpanStart > behind.Span.End));
-            }
-
-            parts.Add(child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken()));
-            previous = child;
-        }
-
-        return Doc.Concat(parts.DrainToImmutable());
+                StructuralFallback.Run(children.Skip(on), visitor, context)));
     }
 
     private static int IndexOfOn(ChildSyntaxList children, SyntaxToken on)

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Language.Expressions;
+using VisualBasicFormatter.Language.Xml;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language;
@@ -146,14 +147,17 @@ internal sealed partial class VbDocVisitor
         QueryExpressionRule.Format(node, this, _context);
 
     public override Doc VisitEqualsValue(EqualsValueSyntax node) =>
-        QueryAssignmentRule.Tail(node.EqualsToken, node.Value, this, _context)
+        AssignmentTail(node.EqualsToken, node.Value)
         ?? StructuralFallback.Format(node, this, _context);
 
     public override Doc VisitAssignmentStatement(AssignmentStatementSyntax node) =>
         !StructuralFallback.MustPrintVerbatim(node)
-        && QueryAssignmentRule.Tail(node.OperatorToken, node.Right, this, _context) is { } tail
+        && AssignmentTail(node.OperatorToken, node.Right) is { } tail
             ? Doc.Concat(Format(node.Left), Doc.Space, tail)
             : StructuralFallback.Format(node, this, _context);
+
+    public override Doc VisitSelectClause(SelectClauseSyntax node) =>
+        SelectClauseRule.Format(node, this, _context);
 
     /// <inheritdoc cref="JoinClauseRule"/>
     public override Doc VisitSimpleJoinClause(SimpleJoinClauseSyntax node) =>
@@ -168,4 +172,8 @@ internal sealed partial class VbDocVisitor
         BinaryExpressionRule.IsRunHead(node)
             ? BinaryExpressionRule.Format(node, this, _context)
             : StructuralFallback.Format(node, this, _context);
+
+    private Doc? AssignmentTail(SyntaxToken op, ExpressionSyntax? value) =>
+        QueryAssignmentRule.Tail(op, value, this, _context)
+        ?? XmlAssignmentRule.Tail(op, value, this, _context);
 }

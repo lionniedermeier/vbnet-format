@@ -78,19 +78,22 @@ internal sealed class FormatContext
     public Doc SoftBreakBefore(SyntaxToken token) =>
         ContinuationPoints.IsImplicitBefore(token) ? Doc.SoftLine : Doc.Nothing;
 
+    public Doc BreakAfterQueryOperator(SyntaxToken token) =>
+        ContinuationPoints.IsImplicitAfterQueryOperator(token) ? Doc.Line : Doc.Nothing;
+
     /// <summary>
     /// A break between the children of an XML element. This is the one kind of break that needs no
     /// permission: inside a literal a line ending is not a continuation but XML whitespace, and the
     /// compiler discards the whitespace between markup entirely. What it does need is a caller that
     /// has established there is no significant text here -- see <see cref="Xml.XmlWhitespace"/>.
     /// </summary>
-    public Doc XmlContentBreak() => Doc.SoftLine;
+    public Doc XmlContentBreak(bool broken) => broken ? Doc.HardLine : Doc.Nothing;
 
     /// <summary>
     /// The same, between the attributes of a tag, where XML wants at least one space -- so this one
     /// is a space rather than nothing while the tag stays flat.
     /// </summary>
-    public Doc XmlTagBreak() => Doc.Line;
+    public Doc XmlTagBreak(bool broken) => broken ? Doc.HardLine : Doc.Space;
 
     /// <summary>
     /// What stands between two neighbours: the spacing the pre-pass left, and nothing else. A break

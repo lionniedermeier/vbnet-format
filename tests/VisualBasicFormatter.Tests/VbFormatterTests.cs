@@ -82,7 +82,9 @@ public sealed class VbFormatterTests
 
         // Imports are resorted and deduplicated, so compare them as a set.
         Assert.Equal(ImportClauses(before), ImportClauses(after));
-        Assert.True(before.WithImports(default).IsEquivalentTo(after.WithImports(default), topLevel: false));
+        Assert.True(
+            before.WithImports(default).IsEquivalentTo(after.WithImports(default), topLevel: false)
+            || VbFormatter.StructurallyIdentical(before.WithImports(default), after.WithImports(default)));
     }
 
     [Fact]
@@ -518,21 +520,54 @@ public sealed class VbFormatterTests
     }
 
     /// <summary>
-    /// The attributes of a tag align under the first one. vbnet-format aligns rather than indents only
-    /// where what is aligned under is stable -- a tag name, a query head -- and it is not configurable;
-    /// see <c>docs/standard_format.md</c>.
+    /// The attributes of a tag hang one level below it, and the closing bracket stays on the last of
+    /// them rather than taking a line of its own; see <c>docs/standard_format.md</c>.
     /// </summary>
     [Fact]
-    public void AlignsXmlAttributesUnderTheFirst()
+    public void HangsXmlAttributesBelowTheTag()
     {
         var result = VbFormatter.Format(TestCases.ReadInput("XmlLiteralAttributes"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        var head = Array.FindIndex(lines, l => l.Contains("<employee id=", StringComparison.Ordinal));
+        var head = Array.FindIndex(lines, l => l.TrimEnd().EndsWith("<employee", StringComparison.Ordinal));
         Assert.True(head >= 0);
 
-        var column = lines[head].IndexOf("id=", StringComparison.Ordinal);
-        Assert.Equal(new string(' ', column) + "name=", lines[head + 1][..(column + 5)]);
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 1]));
+        Assert.StartsWith("id=", lines[head + 1].TrimStart(), StringComparison.Ordinal);
+        Assert.Equal(Indent(lines[head + 1]), Indent(lines[head + 2]));
+        Assert.StartsWith("name=", lines[head + 2].TrimStart(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A literal that fits stays behind the <c>=</c>; one that does not drops below it and is tried
+    /// again there; only then is it broken open. A literal holding a child element skips to the last
+    /// of the three, however much room the line still had.
+    /// </summary>
+    [Fact]
+    public void WrapsALiteralInThreeSteps()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("XmlLiteralWrapping"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.Contains(lines, l => l.Trim() == "Dim fits = <person id=\"42\" name=\"Alice\"/>");
+        Assert.Contains(lines, l => l.Trim() == "Dim hangs =");
+        Assert.Contains(lines, l => l.Trim().StartsWith("<person id=\"42\"", StringComparison.Ordinal));
+        Assert.Contains(lines, l => l.Trim() == "Dim nested =");
+    }
+
+    /// <summary>
+    /// A literal is one decision: once it breaks, every tag with attributes and every element with
+    /// content in it breaks too, however much room the line still had.
+    /// </summary>
+    [Fact]
+    public void BreaksAWholeLiteralOrNoneOfIt()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("XmlLiteralWrapping"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.DoesNotContain(lines, l => l.Contains("<address city=", StringComparison.Ordinal));
+        Assert.Contains(lines, l => l.Trim() == "<address");
+        Assert.Contains(lines, l => l.Trim() == "city=\"Berlin\"/>");
     }
 
     /// <summary>

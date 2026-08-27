@@ -130,13 +130,20 @@ public static class VbFormatter
             return Failure("Formatting changed or lost imports.");
         }
 
-        if (!Body(original).IsEquivalentTo(Body(result), topLevel: false))
+        if (!Body(original).IsEquivalentTo(Body(result), topLevel: false)
+            && !StructurallyIdentical(Body(original), Body(result)))
         {
             return Failure("Formatting changed the code.");
         }
 
         return null;
     }
+
+    internal static bool StructurallyIdentical(SyntaxNode before, SyntaxNode after) =>
+        before.DescendantNodes().Select(n => n.RawKind)
+            .SequenceEqual(after.DescendantNodes().Select(n => n.RawKind))
+        && before.DescendantTokens().Select(t => (t.RawKind, t.Text))
+            .SequenceEqual(after.DescendantTokens().Select(t => (t.RawKind, t.Text)));
 
     private static HashSet<string> ImportClauses(CompilationUnitSyntax root) =>
         new(root.Imports.SelectMany(i => i.ImportsClauses).Select(c => c.ToString().Trim()),

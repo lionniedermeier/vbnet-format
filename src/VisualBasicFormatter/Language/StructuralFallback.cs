@@ -51,6 +51,29 @@ internal static class StructuralFallback
         return Doc.Concat(parts.DrainToImmutable());
     }
 
+    /// <summary>A consecutive run of children, spaced the way <see cref="Format"/> spaces them.</summary>
+    public static Doc Run(
+        IEnumerable<SyntaxNodeOrToken> children,
+        VbDocVisitor visitor,
+        FormatContext context)
+    {
+        var parts = ImmutableArray.CreateBuilder<Doc>();
+        SyntaxNodeOrToken? previous = null;
+
+        foreach (var child in children)
+        {
+            if (previous is { } behind)
+            {
+                parts.Add(context.Gap(child.SpanStart > behind.Span.End));
+            }
+
+            parts.Add(child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken()));
+            previous = child;
+        }
+
+        return Doc.Concat(parts.DrainToImmutable());
+    }
+
     /// <summary>
     /// Whether a comment, a documentation comment or a directive sits above a token inside
     /// <paramref name="node"/>. Its own leading trivia does not count -- that one is printed above

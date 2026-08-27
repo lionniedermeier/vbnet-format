@@ -22,16 +22,16 @@ internal sealed partial class VbDocVisitor
     /// </summary>
     public override Doc VisitXmlElement(XmlElementSyntax node) =>
         XmlWhitespace.IsFormattable(node)
-            ? XmlElementRule.Format(node, this, _context)
+            ? XmlLiteralRule.Format(node, this, _context)
             : Verbatim(node);
 
     /// <inheritdoc/>
     public override Doc VisitXmlEmptyElement(XmlEmptyElementSyntax node) =>
-        XmlTagRule.Format(node, this, _context);
+        XmlLiteralRule.Format(node, this, _context);
 
     /// <inheritdoc/>
     public override Doc VisitXmlElementStartTag(XmlElementStartTagSyntax node) =>
-        XmlTagRule.Format(node, this, _context);
+        XmlTagRule.Format(node, this, _context, IsBrokenTag(node));
 
     /// <inheritdoc/>
     public override Doc VisitXmlElementEndTag(XmlElementEndTagSyntax node) =>
@@ -45,11 +45,11 @@ internal sealed partial class VbDocVisitor
     /// <c>&lt;%= expression %&gt;</c>. Inside it the ordinary VB rules apply again -- a query, a
     /// chain or an argument list breaks there exactly as it would outside a literal.
     /// </summary>
-    public override Doc VisitXmlEmbeddedExpression(XmlEmbeddedExpressionSyntax node) => Doc.Concat(
+    public override Doc VisitXmlEmbeddedExpression(XmlEmbeddedExpressionSyntax node) => Doc.Group(
         _context.Token(node.LessThanPercentEqualsToken),
         Doc.Space,
-        Format(node.Expression),
-        Doc.Space,
+        Doc.Align(Format(node.Expression)),
+        Doc.Line,
         _context.Token(node.PercentGreaterThanToken));
 
     /// <inheritdoc/>
@@ -82,4 +82,7 @@ internal sealed partial class VbDocVisitor
     /// <inheritdoc/>
     public override Doc VisitXmlProcessingInstruction(XmlProcessingInstructionSyntax node) =>
         Verbatim(node);
+
+    private static bool IsBrokenTag(XmlNodeSyntax tag) =>
+        tag.Parent is XmlNodeSyntax element && XmlLayout.IsBroken(element);
 }

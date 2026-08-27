@@ -12,12 +12,20 @@ namespace VisualBasicFormatter.Language.Xml;
 internal static class XmlTagRule
 {
     /// <summary>The start tag of an element: <c>&lt;name attr…&gt;</c>.</summary>
-    public static Doc Format(XmlElementStartTagSyntax node, VbDocVisitor visitor, FormatContext context) =>
-        Tag(node.LessThanToken, node.Name, node.Attributes, node.GreaterThanToken, visitor, context);
+    public static Doc Format(
+        XmlElementStartTagSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context,
+        bool broken) =>
+        Tag(node.LessThanToken, node.Name, node.Attributes, node.GreaterThanToken, visitor, context, broken);
 
     /// <summary>An element that is only a tag: <c>&lt;name attr…/&gt;</c>.</summary>
-    public static Doc Format(XmlEmptyElementSyntax node, VbDocVisitor visitor, FormatContext context) =>
-        Tag(node.LessThanToken, node.Name, node.Attributes, node.SlashGreaterThanToken, visitor, context);
+    public static Doc Format(
+        XmlEmptyElementSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context,
+        bool broken) =>
+        Tag(node.LessThanToken, node.Name, node.Attributes, node.SlashGreaterThanToken, visitor, context, broken);
 
     /// <summary>The end tag: <c>&lt;/name&gt;</c>, which holds nothing that could break.</summary>
     public static Doc Format(XmlElementEndTagSyntax node, VbDocVisitor visitor, FormatContext context) =>
@@ -39,7 +47,8 @@ internal static class XmlTagRule
         SyntaxList<XmlNodeSyntax> attributes,
         SyntaxToken close,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context,
+        bool broken)
     {
         var head = Doc.Concat(context.Token(open), visitor.Format(name));
 
@@ -48,29 +57,22 @@ internal static class XmlTagRule
             return Doc.Concat(head, context.Token(close));
         }
 
-        // Attributes align under the first one, which is the established XML convention and what the
-        // style reference specifies. It is safe here in a way it would not be for VB code: the tag
-        // name is stable, where a method name that alignment hangs off is renamed all the time.
-        //
-        // A group of its own: whether the attributes of this tag fit is a separate question from
-        // whether the element's content does.
-        //
-        // The space is what puts the column Align pins behind the tag name rather than on it.
-        return Doc.Group(
-            head,
-            Doc.Space,
-            Doc.Align(Doc.Concat(Items(attributes, visitor, context))),
-            context.Token(close));
+        var items = Items(attributes, visitor, context, broken);
+
+        return broken
+            ? Doc.Concat(head, Doc.Indent(context.XmlTagBreak(broken), items), context.Token(close))
+            : Doc.Concat(head, Doc.Space, items, context.Token(close));
     }
 
     /// <summary>
     /// Attribute and separator in turn. Unlike the comma of an argument list the separator here is
     /// whitespace, so it has to stay a space when the tag does not break.
     /// </summary>
-    private static ImmutableArray<Doc> Items(
+    private static Doc Items(
         SyntaxList<XmlNodeSyntax> attributes,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context,
+        bool broken)
     {
         var items = ImmutableArray.CreateBuilder<Doc>();
 
@@ -78,12 +80,12 @@ internal static class XmlTagRule
         {
             if (items.Count > 0)
             {
-                items.Add(context.XmlTagBreak());
+                items.Add(context.XmlTagBreak(broken));
             }
 
             items.Add(visitor.Format(attribute));
         }
 
-        return items.DrainToImmutable();
+        return Doc.Concat(items.DrainToImmutable());
     }
 }

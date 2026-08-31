@@ -4,7 +4,12 @@ Module Reporting
         ' Too wide for the statement's line, but the arguments still fit on one indented line of
         ' their own -- so they take it, and the bracket closes below them.
         Dim line As String = String.Format(
-            "{0} {1} {2} {3} {4}", currentCustomerName, currentOrderNumber, currentInvoiceTotal, currentDueDate, currentStatus
+            "{0} {1} {2} {3} {4}",
+            currentCustomerName,
+            currentOrderNumber,
+            currentInvoiceTotal,
+            currentDueDate,
+            currentStatus
         )
 
         ' Wider still: that one indented line does not fit either, so the commas break and every

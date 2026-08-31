@@ -8,11 +8,6 @@ namespace VisualBasicFormatter.Printing;
 /// flat if it fits; a group that does not fit prints its own line breaks, while the groups nested in
 /// it are measured again from the column they then start at.
 /// </summary>
-/// <remarks>
-/// The limit measured against is <see cref="PrintOptions.Limit"/> rather than
-/// <see cref="PrintOptions.MaxLineLength"/>: a line that overruns the configured width by a little is
-/// left alone, because breaking it would cost more than it saves.
-/// </remarks>
 internal sealed class DocPrinter
 {
     private readonly PrintOptions _options;
@@ -286,7 +281,7 @@ internal sealed class DocPrinter
     /// </param>
     private bool Fits(Command next, bool declaredBreaksOnly = false)
     {
-        if (_column > _options.Limit)
+        if (_column > _options.MaxLineLength)
         {
             return false;
         }
@@ -371,7 +366,7 @@ internal sealed class DocPrinter
                     column = TextWidth.Measure(verbatim.Lines[0], column, _options.IndentSize);
 
                     // A further line means the line under test ends here.
-                    if (verbatim.Lines.Length > 1 && column <= _options.Limit)
+                    if (verbatim.Lines.Length > 1 && column <= _options.MaxLineLength)
                     {
                         return true;
                     }
@@ -392,7 +387,7 @@ internal sealed class DocPrinter
                     break;
             }
 
-            if (column > _options.Limit)
+            if (column > _options.MaxLineLength)
             {
                 return false;
             }

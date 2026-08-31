@@ -25,10 +25,7 @@ public enum EndOfLine
 /// </remarks>
 public sealed record FormatterOptions
 {
-    /// <summary>
-    /// The column width lines are wrapped at. It is a target rather than a hard ceiling: a line that
-    /// overruns it only slightly is left alone, because breaking it would cost more than it saves.
-    /// </summary>
+    /// <summary>The column width lines are wrapped at.</summary>
     public int MaxLineLength { get; init; } = 120;
 
     /// <summary>The number of characters per indentation level.</summary>

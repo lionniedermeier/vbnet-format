@@ -8,9 +8,7 @@ namespace VisualBasicFormatter;
 /// <param name="Changed">Whether <paramref name="Text"/> differs from the input.</param>
 /// <param name="Diagnostics">Parse errors, or the reasons the run was abandoned.</param>
 /// <remarks>
-/// A line that ends up over the limit is not reported. <see cref="FormatterOptions.MaxLineLength"/>
-/// is a target rather than a ceiling, so an overlong line is a decision the formatter took, not a
-/// failure it needs to confess to.
+/// A line that ends up over the limit is not reported.
 /// </remarks>
 public sealed record FormatResult(
     string Text,

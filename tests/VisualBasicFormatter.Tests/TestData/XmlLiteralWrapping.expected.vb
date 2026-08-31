@@ -7,7 +7,7 @@ Module Wrapping
         Dim fits = <person id="42" name="Alice"/>
 
         Dim hangs =
-            <person id="42" name="Alice" role="Engineer" location="Munich" department="Engineering" manager="Alice Schmidt"/>
+            <person id="42" name="Alice" role="Engineer" location="Munich" department="Eng" manager="Alice Schmidt"/>
 
         Dim nested =
             <person

@@ -6,21 +6,12 @@ namespace VisualBasicFormatter.Tests;
 /// <summary>The IR and the printer on their own, without any VB in the picture.</summary>
 public sealed class DocPrinterTests
 {
-    /// <summary>
-    /// The tolerance defaults to zero here so that a test can say what it means about the limit.
-    /// <see cref="LeavesASlightOverrunAlone"/> is where the shipping value is exercised.
-    /// </summary>
-    private static PrintOptions Options(
-        int maxLineLength = 80,
-        int indentSize = 4,
-        bool useTabs = false,
-        int overflowTolerance = 0) =>
+    private static PrintOptions Options(int maxLineLength = 80, int indentSize = 4, bool useTabs = false) =>
         new()
         {
             MaxLineLength = maxLineLength,
             IndentSize = indentSize,
             UseTabs = useTabs,
-            OverflowTolerance = overflowTolerance,
             NewLine = "\n",
         };
 
@@ -317,25 +308,14 @@ public sealed class DocPrinterTests
         Assert.Equal("Foo(\na\nb)", Print(doc));
     }
 
-    /// <summary>
-    /// The limit is a target, not a ceiling. A group that overruns it by no more than the tolerance
-    /// stays on its line; one that overruns it by more breaks. This is the whole of the soft limit.
-    /// </summary>
     [Fact]
-    public void LeavesASlightOverrunAlone()
+    public void BreaksAsSoonAsTheLimitIsPassed()
     {
         static Doc Row(int width) => Doc.Group(Doc.Concat(
             Doc.Text(new string('a', width - 4)), Doc.Line, Doc.Text("bbb")));
 
-        var options = Options(maxLineLength: 120, overflowTolerance: 10);
-
-        // 118 is under the limit, 125 is inside the grace, 135 is past it.
-        Assert.DoesNotContain('\n', Print(Row(118), options));
-        Assert.DoesNotContain('\n', Print(Row(125), options));
-        Assert.Contains('\n', Print(Row(135), options));
-
-        // Without the grace the same 125-column row breaks, so it really is the tolerance deciding.
-        Assert.Contains('\n', Print(Row(125), Options(maxLineLength: 120)));
+        Assert.DoesNotContain('\n', Print(Row(80)));
+        Assert.Contains('\n', Print(Row(81)));
     }
 
     [Fact]

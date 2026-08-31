@@ -21,7 +21,8 @@ Public Class QueryClauses
             From employee In employees
             Join reportingManager In employees
                 On employee.ReportingManagerIdentifier Equals CType(reportingManager.UniqueIdentifier, Integer?)
-            Group Join colleague In employees On employee.Department Equals colleague.Department Into ColleagueGroup = Group
+            Group Join colleague In employees
+                On employee.Department Equals colleague.Department Into ColleagueGroup = Group
             Select employee.Name
 
         ' Let, Order By, the paging operators and Distinct.

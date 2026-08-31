@@ -586,6 +586,87 @@ public sealed class VbFormatterTests
         Assert.Contains(lines, l => l == "   and    one   more</pre>");
     }
 
+    [Fact]
+    public void HangsABrokenConcatenationBelowTheAssignment()
+    {
+        var lines = Lines("StringConcatenation");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Contains("Dim longSqlQueryExpressionAsString", StringComparison.Ordinal));
+
+        Assert.True(head >= 0);
+        Assert.EndsWith("=", lines[head]);
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 1]));
+        Assert.Equal("\"select id, name, address, salary\" &", lines[head + 1].TrimStart());
+        Assert.Equal(Indent(lines[head + 1]), Indent(lines[head + 2]));
+        Assert.Equal("\"from employees\" &", lines[head + 2].TrimStart());
+        Assert.Equal(Indent(lines[head + 1]), Indent(lines[head + 3]));
+        Assert.Equal("\"where salary > 80000\"", lines[head + 3].TrimStart());
+    }
+
+    [Fact]
+    public void DoesNotCollapseADeliberatelyWrappedConcatenation()
+    {
+        var lines = Lines("StringConcatenation");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Contains("Dim deliberatelyWrappedQuery", StringComparison.Ordinal));
+
+        Assert.True(head >= 0);
+        Assert.EndsWith("=", lines[head]);
+        Assert.Equal("\"select id, name, address, salary\" &", lines[head + 1].TrimStart());
+        Assert.Equal("\"from employees\"", lines[head + 2].TrimStart());
+    }
+
+    [Fact]
+    public void KeepsFragmentsTheAuthorPairedOnOneLine()
+    {
+        var lines = Lines("StringConcatenation");
+
+        Assert.Contains(lines, l => l.Trim() == "\" from t\" & vbCrLf &");
+        Assert.Contains(lines, l => l.Trim() == "\" where x = \" & identifier");
+    }
+
+    [Fact]
+    public void CollapsesAShortConcatenationTheAuthorLeftOnOneLine()
+    {
+        var lines = Lines("StringConcatenation");
+
+        Assert.Contains(
+            lines,
+            l => l.Trim()
+                == "Dim sqlQueryExpressionAsString = \"select id, name, address, salary\" & \"from employees\"");
+    }
+
+    [Fact]
+    public void LeavesAWrappedConditionToTheWidth()
+    {
+        const string Source = """
+            Module M
+
+                Public Function F(ByVal candidate As Contract) As Boolean
+                    Dim ok = candidate.IsActive AndAlso
+                        candidate.HasValidSignature
+                    Return ok
+                End Function
+
+            End Module
+
+            """;
+
+        var lines = VbFormatter.Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.Contains(
+            lines,
+            l => l.Trim() == "Dim ok = candidate.IsActive AndAlso candidate.HasValidSignature");
+    }
+
+    private static string[] Lines(string name) =>
+        VbFormatter.Format(TestCases.ReadInput(name)).Text.ReplaceLineEndings("\n").Split('\n');
+
     private static int Indent(string line) => line.Length - line.TrimStart().Length;
 
     private static CompilationUnitSyntax Parse(string source) =>

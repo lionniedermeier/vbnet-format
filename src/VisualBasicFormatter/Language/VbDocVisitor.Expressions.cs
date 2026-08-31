@@ -175,5 +175,6 @@ internal sealed partial class VbDocVisitor
 
     private Doc? AssignmentTail(SyntaxToken op, ExpressionSyntax? value) =>
         QueryAssignmentRule.Tail(op, value, this, _context)
-        ?? XmlAssignmentRule.Tail(op, value, this, _context);
+        ?? XmlAssignmentRule.Tail(op, value, this, _context)
+        ?? ConcatAssignmentRule.Tail(op, value, this, _context);
 }

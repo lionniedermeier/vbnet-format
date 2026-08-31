@@ -55,6 +55,9 @@ internal static class BinaryExpressionRule
         operators.Reverse();
         operands.Reverse();
 
+        var preserved = node.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
+            && operators.Any(context.EndsItsLine);
+
         // Content and separator in turn: an operand carries the operator that follows it, and the
         // break that operator permits stands between the two.
         var items = ImmutableArray.CreateBuilder<Doc>();
@@ -69,10 +72,20 @@ internal static class BinaryExpressionRule
 
             items.Add(
                 Doc.Concat(FormatOperand(operands[i], visitor, context), Doc.Space, context.Token(operators[i])));
-            items.Add(context.BreakAfter(operators[i]));
+            items.Add(Separator(operators[i], preserved, context));
         }
 
         return VbDocBuilder.Run(items.DrainToImmutable(), indent: !isNested);
+    }
+
+    private static Doc Separator(SyntaxToken op, bool preserved, FormatContext context)
+    {
+        if (!preserved)
+        {
+            return context.BreakAfter(op);
+        }
+
+        return context.EndsItsLine(op) ? context.HardBreakAfter(op) : Doc.Space;
     }
 
     /// <summary>

@@ -58,6 +58,18 @@ internal sealed class FormatContext
     public Doc SoftBreakAfter(SyntaxToken token) =>
         ContinuationPoints.IsImplicitAfter(token) ? Doc.SoftLine : Doc.Nothing;
 
+    public bool EndsItsLine(SyntaxToken token)
+    {
+        var next = token.GetNextToken();
+
+        return next != default
+            && Text.Lines.GetLinePosition(token.Span.End).Line
+                < Text.Lines.GetLinePosition(next.SpanStart).Line;
+    }
+
+    public Doc HardBreakAfter(SyntaxToken token) =>
+        ContinuationPoints.IsImplicitAfter(token) ? Doc.HardLine : Doc.Space;
+
     /// <summary>
     /// A break the language permits in front of <paramref name="token"/>: a query clause head, or a
     /// closing bracket. Everywhere else the break belongs behind the token it follows.

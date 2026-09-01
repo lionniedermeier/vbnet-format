@@ -50,6 +50,21 @@ internal sealed record ConfigFile
             : throw new InvalidDataException($"'{value}' is not a known VB language version.");
     }
 
+    public static ConfigFile From(FormatterOptions options) => new()
+    {
+        MaxLineLength = options.MaxLineLength,
+        IndentSize = options.IndentSize,
+        UseTabs = options.UseTabs,
+        EndOfLine = options.EndOfLine,
+        LanguageVersion = LanguageVersionFacts.ToDisplayString(options.LanguageVersion),
+        OrganizeImports = options.OrganizeImports,
+    };
+
+    public void Save(string path) =>
+        File.WriteAllText(
+            path,
+            JsonSerializer.Serialize(this, ConfigJsonContext.Default.ConfigFile) + Environment.NewLine);
+
     public static ConfigFile Load(string path)
     {
         try
@@ -68,6 +83,7 @@ internal sealed record ConfigFile
     PropertyNameCaseInsensitive = true,
     ReadCommentHandling = JsonCommentHandling.Skip,
     AllowTrailingCommas = true,
+    WriteIndented = true,
     Converters = [typeof(JsonStringEnumConverter<EndOfLine>)])]
 [JsonSerializable(typeof(ConfigFile))]
 internal sealed partial class ConfigJsonContext : JsonSerializerContext;

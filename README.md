@@ -9,3 +9,9 @@ Roslyn's own `Formatter` normalizes indentation and spacing but never introduces
 ```
 vbnet-format [SUBCOMMAND] [OPTIONS...] [FILES...]
 ```
+
+## Trademark Disclaimer
+
+vbnet-format is an independent, non-commercial, open-source project and is not affiliated with, sponsored by, or endorsed by Microsoft Corporation.
+
+Visual Basic, VB.NET, and .NET are trademarks of Microsoft Corporation. They are used solely to identify the technologies supported by this project.

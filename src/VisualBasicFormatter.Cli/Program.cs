@@ -11,6 +11,8 @@ internal static class Program
     private const int ExitWouldChange = 1;
     private const int ExitError = 2;
 
+    private const string ConfigFileName = ".vbnet-format.json";
+
     private const string IgnoreFileName = ".vbnet-formatignore";
 
     private static readonly string[] AlwaysExcluded =
@@ -71,7 +73,7 @@ internal static class Program
 
         var config = new Option<FileInfo?>("--config")
         {
-            Description = "Path to a .vbnet-format.json.",
+            Description = $"Path to a {ConfigFileName}.",
         };
 
         var ignorePath = new Option<string[]>("--ignore-path")
@@ -90,7 +92,20 @@ internal static class Program
             Description = "Read no ignore file at all.",
         };
 
+        var force = new Option<bool>("--force")
+        {
+            Description = $"Overwrite an existing {ConfigFileName}.",
+        };
+
+        var init = new Command(
+            "init",
+            $"Write a {ConfigFileName} with the default options into the working directory.");
+        init.Options.Add(force);
+        init.SetAction(result =>
+            Guarded(() => RunInit(Directory.GetCurrentDirectory(), result.GetValue(force))));
+
         var root = new RootCommand("vbnet-format - a formatter for VB.NET source.");
+        root.Subcommands.Add(init);
         root.Arguments.Add(paths);
         Option[] all =
         [
@@ -103,40 +118,60 @@ internal static class Program
             root.Options.Add(option);
         }
 
-        root.SetAction(result =>
+        root.SetAction(result => Guarded(() =>
         {
-            try
-            {
-                var options = BuildOptions(
-                    result.GetValue(config),
-                    result.GetValue(maxLineLength),
-                    result.GetValue(indentSize),
-                    result.GetValue(useTabs),
-                    result.GetValue(endOfLine),
-                    result.GetValue(languageVersion),
-                    result.GetValue(noOrganizeImports));
+            var options = BuildOptions(
+                result.GetValue(config),
+                result.GetValue(maxLineLength),
+                result.GetValue(indentSize),
+                result.GetValue(useTabs),
+                result.GetValue(endOfLine),
+                result.GetValue(languageVersion),
+                result.GetValue(noOrganizeImports));
 
-                return result.GetValue(stdin)
-                    ? RunStdin(options)
-                    : RunFiles(
-                        result.GetValue(paths) ?? [],
-                        DiscoverIgnores(
-                            Directory.GetCurrentDirectory(),
-                            result.GetValue(ignorePath) ?? [],
-                            !result.GetValue(noRespectGitignore),
-                            result.GetValue(noIgnore)),
-                        options,
-                        result.GetValue(check),
-                        result.GetValue(diff));
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
-            {
-                Console.Error.WriteLine($"vbnet-format: {ex.Message}");
-                return ExitError;
-            }
-        });
+            return result.GetValue(stdin)
+                ? RunStdin(options)
+                : RunFiles(
+                    result.GetValue(paths) ?? [],
+                    DiscoverIgnores(
+                        Directory.GetCurrentDirectory(),
+                        result.GetValue(ignorePath) ?? [],
+                        !result.GetValue(noRespectGitignore),
+                        result.GetValue(noIgnore)),
+                    options,
+                    result.GetValue(check),
+                    result.GetValue(diff));
+        }));
 
         return root.Parse(args).Invoke();
+    }
+
+    private static int Guarded(Func<int> action)
+    {
+        try
+        {
+            return action();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            Console.Error.WriteLine($"vbnet-format: {ex.Message}");
+            return ExitError;
+        }
+    }
+
+    internal static int RunInit(string directory, bool force)
+    {
+        var path = Path.Combine(directory, ConfigFileName);
+
+        if (File.Exists(path) && !force)
+        {
+            Console.Error.WriteLine($"vbnet-format: {path} already exists. Pass --force to overwrite.");
+            return ExitError;
+        }
+
+        ConfigFile.From(new FormatterOptions()).Save(path);
+        Console.Out.WriteLine($"{path}: created.");
+        return ExitOk;
     }
 
     private static FormatterOptions BuildOptions(
@@ -194,7 +229,7 @@ internal static class Program
     {
         for (var dir = new DirectoryInfo(Directory.GetCurrentDirectory()); dir is not null; dir = dir.Parent)
         {
-            var candidate = Path.Combine(dir.FullName, ".vbnet-format.json");
+            var candidate = Path.Combine(dir.FullName, ConfigFileName);
             if (File.Exists(candidate))
             {
                 return candidate;

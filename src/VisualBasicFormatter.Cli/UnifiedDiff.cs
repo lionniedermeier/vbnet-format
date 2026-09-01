@@ -2,7 +2,7 @@ using System.Text;
 
 namespace VisualBasicFormatter.Cli;
 
-/// <summary>Erzeugt ein Unified-Diff zweier Textfassungen.</summary>
+/// <summary>Generates a Unified-Diff</summary>
 internal static class UnifiedDiff
 {
     private const int Context = 3;
@@ -116,7 +116,7 @@ internal static class UnifiedDiff
             {
                 var nextChange = FindNextChange(changed, to);
 
-                // Liegen zwei Aenderungen dicht beieinander, gehoeren sie in denselben Block.
+                // Adjacent changes belong to the same block
                 if (nextChange >= 0 && nextChange - to <= Context * 2)
                 {
                     to = nextChange + 1;

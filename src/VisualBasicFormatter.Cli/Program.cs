@@ -41,6 +41,11 @@ internal static class Program
             Description = "Read source from standard input and write the formatted result to standard output.",
         };
 
+        var write = new Option<bool>("--write", "-w")
+        {
+            Description = "Format the files in place. Without it the formatted source is written to standard output and the files are left untouched.",
+        };
+
         var maxLineLength = new Option<int?>("--max-line-length")
         {
             Description = "The column width lines are wrapped at (default 120). A target, not a hard ceiling.",
@@ -109,7 +114,7 @@ internal static class Program
         root.Arguments.Add(paths);
         Option[] all =
         [
-            check, diff, stdin, maxLineLength, indentSize, useTabs, endOfLine, languageVersion,
+            check, diff, stdin, write, maxLineLength, indentSize, useTabs, endOfLine, languageVersion,
             noOrganizeImports, config, ignorePath, noRespectGitignore, noIgnore,
         ];
 
@@ -120,6 +125,14 @@ internal static class Program
 
         root.SetAction(result => Guarded(() =>
         {
+            if (result.GetValue(write)
+                && (result.GetValue(check) || result.GetValue(diff) || result.GetValue(stdin)))
+            {
+                Console.Error.WriteLine(
+                    "vbnet-format: --write cannot be combined with --check, --diff or --stdin.");
+                return ExitError;
+            }
+
             var options = BuildOptions(
                 result.GetValue(config),
                 result.GetValue(maxLineLength),
@@ -139,8 +152,10 @@ internal static class Program
                         !result.GetValue(noRespectGitignore),
                         result.GetValue(noIgnore)),
                     options,
+                    result.GetValue(write),
                     result.GetValue(check),
-                    result.GetValue(diff));
+                    result.GetValue(diff),
+                    Console.Out);
         }));
 
         return root.Parse(args).Invoke();
@@ -283,12 +298,14 @@ internal static class Program
         return ExitOk;
     }
 
-    private static int RunFiles(
+    internal static int RunFiles(
         string[] paths,
         IgnoreSet ignores,
         FormatterOptions options,
+        bool write,
         bool check,
-        bool diff)
+        bool diff,
+        TextWriter output)
     {
         var matched = Resolve(paths).ToList();
         var files = matched.Where(file => !ignores.IsIgnored(file)).ToList();
@@ -319,6 +336,12 @@ internal static class Program
                 continue;
             }
 
+            if (!write && !check && !diff)
+            {
+                output.Write(result.Text);
+                continue;
+            }
+
             if (!result.Changed)
             {
                 continue;
@@ -326,16 +349,16 @@ internal static class Program
 
             if (diff)
             {
-                Console.Out.Write(UnifiedDiff.Create(file, source, result.Text));
+                output.Write(UnifiedDiff.Create(file, source, result.Text));
             }
             else if (check)
             {
-                Console.Out.WriteLine($"{file}: would be reformatted.");
+                output.WriteLine($"{file}: would be reformatted.");
             }
             else
             {
                 File.WriteAllText(file, result.Text);
-                Console.Out.WriteLine($"{file}: formatted.");
+                output.WriteLine($"{file}: formatted.");
             }
 
             if ((check || diff) && exitCode == ExitOk)

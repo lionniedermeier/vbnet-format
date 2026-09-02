@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using VisualBasicFormatter;
 using VisualBasicFormatter.Cli;
 
@@ -71,19 +72,44 @@ public sealed class WriteModeTests : IDisposable
         Run(output, write: true);
 
         Assert.Equal(Formatted(Unformatted), File.ReadAllText(file));
-        Assert.Contains($"{file}: formatted.", output.ToString());
+        Assert.Matches(@"^Sample\.vb \d+ms$", Line(output, "Sample.vb"));
         Assert.DoesNotContain("Dim x = 1", output.ToString());
     }
 
     [Fact]
-    public void WriteLeavesAnAlreadyFormattedFileAlone()
+    public void WriteReportsAnAlreadyFormattedFileAsUnchanged()
     {
-        Write("Sample.vb", Formatted(Unformatted));
+        var file = Write("Sample.vb", Formatted(Unformatted));
         var output = new StringWriter();
 
         Run(output, write: true);
 
-        Assert.DoesNotContain(": formatted.", output.ToString());
+        Assert.Equal(Formatted(Unformatted), File.ReadAllText(file));
+        Assert.Matches(@"^Sample\.vb \d+ms \(unchanged\)$", Line(output, "Sample.vb"));
+    }
+
+    [Fact]
+    public void WriteUsesForwardSlashesForNestedPaths()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "sub"));
+        Write(Path.Combine("sub", "Nested.vb"), Unformatted);
+        var output = new StringWriter();
+
+        Run(output, write: true);
+
+        Assert.Matches(@"^sub/Nested\.vb \d+ms$", Line(output, "Nested.vb"));
+    }
+
+    [Fact]
+    public void WritePrintsASummaryLine()
+    {
+        Write("Changed.vb", Unformatted);
+        Write("Kept.vb", Formatted(Unformatted));
+        var output = new StringWriter();
+
+        Run(output, write: true);
+
+        Assert.Contains("1 formatted, 1 unchanged in ", output.ToString());
     }
 
     [Fact]
@@ -95,7 +121,14 @@ public sealed class WriteModeTests : IDisposable
     }
 
     private int Run(TextWriter output, bool write = false) =>
-        Program.RunFiles([_root], IgnoreSet.Empty, new FormatterOptions(), write, check: false, diff: false, output);
+        Program.RunFiles(
+            [_root], _root, IgnoreSet.Empty, new FormatterOptions(), write, check: false, diff: false, output);
+
+    private static string[] Lines(TextWriter output) =>
+        (output.ToString() ?? string.Empty).Split('\n').Select(line => line.TrimEnd('\r')).ToArray();
+
+    private static string Line(TextWriter output, string contains) =>
+        Lines(output).Single(line => line.Contains(contains));
 
     private static string Formatted(string source) => VbFormatter.Format(source).Text;
 

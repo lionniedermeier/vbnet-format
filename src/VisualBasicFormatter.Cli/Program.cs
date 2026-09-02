@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Diagnostics;
 using Microsoft.Extensions.FileSystemGlobbing;
 using VisualBasicFormatter;
 
@@ -150,6 +151,7 @@ internal static class Program
                 ? RunStdin(options)
                 : RunFiles(
                     result.GetValue(paths) ?? [],
+                    Directory.GetCurrentDirectory(),
                     DiscoverIgnores(
                         Directory.GetCurrentDirectory(),
                         result.GetValue(ignorePath) ?? [],
@@ -304,6 +306,7 @@ internal static class Program
 
     internal static int RunFiles(
         string[] paths,
+        string root,
         IgnoreSet ignores,
         FormatterOptions options,
         bool write,
@@ -327,9 +330,13 @@ internal static class Program
         }
 
         var exitCode = ExitOk;
+        var formatted = 0;
+        var unchanged = 0;
+        var runStart = Stopwatch.GetTimestamp();
 
         foreach (var file in files)
         {
+            var fileStart = Stopwatch.GetTimestamp();
             var source = File.ReadAllText(file);
             var result = VbFormatter.Format(source, options);
 
@@ -346,7 +353,7 @@ internal static class Program
                 continue;
             }
 
-            if (!result.Changed)
+            if (!write && !result.Changed)
             {
                 continue;
             }
@@ -359,10 +366,16 @@ internal static class Program
             {
                 output.WriteLine($"{file}: would be reformatted.");
             }
-            else
+            else if (result.Changed)
             {
                 File.WriteAllText(file, result.Text);
-                output.WriteLine($"{file}: formatted.");
+                formatted++;
+                output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms");
+            }
+            else
+            {
+                unchanged++;
+                output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms (unchanged)");
             }
 
             if ((check || diff) && exitCode == ExitOk)
@@ -371,8 +384,20 @@ internal static class Program
             }
         }
 
+        if (write && formatted + unchanged > 0)
+        {
+            output.WriteLine(
+                $"{formatted} formatted, {unchanged} unchanged in {Millis(runStart)}ms");
+        }
+
         return exitCode;
     }
+
+    private static long Millis(long start) =>
+        (long)Math.Round(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+
+    private static string DisplayPath(string root, string file) =>
+        Path.GetRelativePath(root, file).Replace('\\', '/');
 
     internal static IEnumerable<string> Resolve(string[] paths)
     {

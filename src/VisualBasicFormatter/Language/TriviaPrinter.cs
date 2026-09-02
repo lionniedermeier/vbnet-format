@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language;
@@ -64,12 +65,16 @@ internal static class TriviaPrinter
 
     /// <summary>
     /// A comment behind <paramref name="token"/> on the same line. It is parked as a line suffix so
-    /// that it stays on that line even when a break is inserted before it, and it forces the
-    /// enclosing group to break so that no following code can end up inside the comment.
+    /// that it stays on that line even when a break is inserted before it. While code still follows
+    /// the comment inside the same statement it also forces the enclosing group to break, so that
+    /// following code cannot end up on the same line as the comment and be lost behind it; behind the
+    /// last token of a statement nothing follows, and the break the statement list already puts after
+    /// it is enough.
     /// </summary>
     public static Doc Trailing(SyntaxToken token, FormatContext context)
     {
         var parts = ImmutableArray.CreateBuilder<Doc>();
+        var expands = HasCodeBehind(token);
 
         foreach (var trivia in token.TrailingTrivia)
         {
@@ -79,11 +84,23 @@ internal static class TriviaPrinter
             }
 
             parts.Add(Doc.LineSuffix(Doc.Concat(Doc.Space, content)));
-            parts.Add(Doc.ExpandParent);
+
+            if (expands)
+            {
+                parts.Add(Doc.ExpandParent);
+            }
         }
 
         return Doc.Concat(parts.DrainToImmutable());
     }
+
+    /// <summary>
+    /// Whether a token still follows <paramref name="token"/> inside the statement it belongs to. When
+    /// none does, a comment behind it is the last thing on the line and needs no forced break.
+    /// </summary>
+    private static bool HasCodeBehind(SyntaxToken token) =>
+        token.Parent?.FirstAncestorOrSelf<StatementSyntax>() is not { } statement
+        || statement.GetLastToken() != token;
 
     /// <summary>How many blank lines the author left above <paramref name="token"/>.</summary>
     public static int BlankLinesBefore(SyntaxToken token)

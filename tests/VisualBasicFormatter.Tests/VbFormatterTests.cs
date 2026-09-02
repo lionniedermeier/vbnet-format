@@ -664,6 +664,26 @@ public sealed class VbFormatterTests
             l => l.Trim() == "Dim ok = candidate.IsActive AndAlso candidate.HasValidSignature");
     }
 
+    [Fact]
+    public void DoesNotWrapAFittingLineForATrailingComment()
+    {
+        var lines = Lines("TrailingComments");
+
+        Assert.Contains(lines, l => l.Trim() == "For index = 0 To elements.GetLength(0) - 1 ' walk every row");
+        Assert.Contains(lines, l => l.Trim() == "Dim upper = elements.GetLength(0) - 1 ' the last index");
+        Assert.Contains(lines, l => l.Trim() == "Dim both = first AndAlso second ' both of them");
+        Assert.DoesNotContain(lines, l => l.TrimEnd().EndsWith("-", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void StillBreaksWhereCodeFollowsTheComment()
+    {
+        var lines = Lines("TrailingComments");
+
+        Assert.Contains(lines, l => l.Trim() == "alpha, ' the first term");
+        Assert.Contains(lines, l => l.Trim() == "beta");
+    }
+
     private static string[] Lines(string name) =>
         VbFormatter.Format(TestCases.ReadInput(name)).Text.ReplaceLineEndings("\n").Split('\n');
 

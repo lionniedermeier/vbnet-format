@@ -42,6 +42,16 @@ public sealed class FileDiscoveryTests : IDisposable
     }
 
     [Fact]
+    public void SkipsGeneratedDesignerFiles()
+    {
+        Write("Form1.vb");
+        Write("Form1.Designer.vb");
+        Write(Path.Combine("src", "deep", "Form2.designer.vb"));
+
+        Assert.Equal([Path.Combine(_root, "Form1.vb")], Resolve());
+    }
+
+    [Fact]
     public void FindsSourceFilesAtEveryDepth()
     {
         Write("a.vb");

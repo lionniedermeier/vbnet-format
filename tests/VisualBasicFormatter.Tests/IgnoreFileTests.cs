@@ -164,6 +164,22 @@ public sealed class IgnoreFileTests : IDisposable
         Assert.False(ignores.IsIgnored(Path.Combine(_root, "a.vb")));
     }
 
+    [Theory]
+    [InlineData(".vbnetformatignore")]
+    [InlineData(".vbfmtignore")]
+    [InlineData(".vbnet-formatignore")]
+    [InlineData(".vbnet-format-ignore")]
+    public void RecognizesEveryIgnoreFileNameAlias(string name)
+    {
+        Write(name, "**/*.Designer.vb");
+
+        var ignores = Program.DiscoverIgnores(_root, [], respectGitignore: true, noIgnore: false);
+
+        Assert.True(ignores.IsIgnored(Path.Combine(_root, "Form1.Designer.vb")));
+        Assert.True(ignores.IsIgnored(Path.Combine(_root, "src", "Form1.Designer.vb")));
+        Assert.False(ignores.IsIgnored(Path.Combine(_root, "Form1.vb")));
+    }
+
     [Fact]
     public void LetsTheIgnoreFileOverrideTheGitignore()
     {

@@ -13,16 +13,20 @@ internal static class Program
 
     private const string ConfigFileName = ".vbnet-format.json";
 
-    private const string IgnoreFileName = ".vbnet-formatignore";
+    private static readonly string[] IgnoreFileNames =
+        [".vbnetformatignore", ".vbfmtignore", ".vbnet-formatignore", ".vbnet-format-ignore"];
 
     private static readonly string[] AlwaysExcluded =
         ["bin", "obj", "node_modules", ".git", ".svn", ".hg"];
+
+    private static readonly string[] AlwaysExcludedFiles =
+        ["**/*.Designer.vb"];
 
     private static int Main(string[] args)
     {
         var paths = new Argument<string[]>("paths")
         {
-            Description = "Files, directories or glob patterns. Directories are searched for **/*.vb.",
+            Description = "Files, directories or glob patterns. Directories are searched for **/*.vb, skipping generated *.Designer.vb files.",
             Arity = ArgumentArity.ZeroOrMore,
         };
 
@@ -83,7 +87,7 @@ internal static class Program
 
         var ignorePath = new Option<string[]>("--ignore-path")
         {
-            Description = $"Path to a file of ignore patterns. Repeatable; replaces .gitignore and {IgnoreFileName}.",
+            Description = $"Path to a file of ignore patterns. Repeatable; replaces .gitignore and {string.Join("/", IgnoreFileNames)}.",
             Arity = ArgumentArity.ZeroOrMore,
         };
 
@@ -271,7 +275,7 @@ internal static class Program
         }
 
         var files = new List<IgnoreFile>();
-        string[] candidates = respectGitignore ? [".gitignore", IgnoreFileName] : [IgnoreFileName];
+        string[] candidates = respectGitignore ? [".gitignore", .. IgnoreFileNames] : IgnoreFileNames;
 
         foreach (var candidate in candidates)
         {
@@ -403,6 +407,11 @@ internal static class Program
         foreach (var excluded in AlwaysExcluded)
         {
             matcher.AddExclude($"**/{excluded}/**");
+        }
+
+        foreach (var excluded in AlwaysExcludedFiles)
+        {
+            matcher.AddExclude(excluded);
         }
 
         return matcher.GetResultsInFullPath(root);

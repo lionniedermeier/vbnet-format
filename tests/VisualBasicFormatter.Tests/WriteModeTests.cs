@@ -69,7 +69,7 @@ public sealed class WriteModeTests : IDisposable
         var file = Write("Sample.vb", Unformatted);
         var output = new StringWriter();
 
-        Run(output, write: true);
+        Run(output, write: true, verbose: true);
 
         Assert.Equal(Formatted(Unformatted), File.ReadAllText(file));
         Assert.Matches(@"^Sample\.vb \d+ms$", Line(output, "Sample.vb"));
@@ -82,7 +82,7 @@ public sealed class WriteModeTests : IDisposable
         var file = Write("Sample.vb", Formatted(Unformatted));
         var output = new StringWriter();
 
-        Run(output, write: true);
+        Run(output, write: true, verbose: true);
 
         Assert.Equal(Formatted(Unformatted), File.ReadAllText(file));
         Assert.Matches(@"^Sample\.vb \d+ms \(unchanged\)$", Line(output, "Sample.vb"));
@@ -95,7 +95,7 @@ public sealed class WriteModeTests : IDisposable
         Write(Path.Combine("sub", "Nested.vb"), Unformatted);
         var output = new StringWriter();
 
-        Run(output, write: true);
+        Run(output, write: true, verbose: true);
 
         Assert.Matches(@"^sub/Nested\.vb \d+ms$", Line(output, "Nested.vb"));
     }
@@ -107,9 +107,33 @@ public sealed class WriteModeTests : IDisposable
         Write("Kept.vb", Formatted(Unformatted));
         var output = new StringWriter();
 
-        Run(output, write: true);
+        Run(output, write: true, summary: true);
 
         Assert.Contains("1 formatted, 1 unchanged in ", output.ToString());
+    }
+
+    [Fact]
+    public void WriteIsSilentWithoutVerboseOrSummary()
+    {
+        var file = Write("Sample.vb", Unformatted);
+        var output = new StringWriter();
+
+        Run(output, write: true);
+
+        Assert.Equal(Formatted(Unformatted), File.ReadAllText(file));
+        Assert.Equal(string.Empty, output.ToString());
+    }
+
+    [Fact]
+    public void SummaryWithoutVerbosePrintsNoPerFileLine()
+    {
+        Write("Changed.vb", Unformatted);
+        var output = new StringWriter();
+
+        Run(output, write: true, summary: true);
+
+        Assert.Contains("1 formatted, 0 unchanged in ", output.ToString());
+        Assert.DoesNotContain("Changed.vb", output.ToString());
     }
 
     [Fact]
@@ -120,9 +144,10 @@ public sealed class WriteModeTests : IDisposable
         Assert.Equal(ExitOk, Run(new StringWriter()));
     }
 
-    private int Run(TextWriter output, bool write = false) =>
+    private int Run(TextWriter output, bool write = false, bool verbose = false, bool summary = false) =>
         Program.RunFiles(
-            [_root], _root, IgnoreSet.Empty, new FormatterOptions(), write, check: false, diff: false, output);
+            [_root], _root, IgnoreSet.Empty, new FormatterOptions(), write, check: false, diff: false,
+            verbose, summary, output);
 
     private static string[] Lines(TextWriter output) =>
         (output.ToString() ?? string.Empty).Split('\n').Select(line => line.TrimEnd('\r')).ToArray();

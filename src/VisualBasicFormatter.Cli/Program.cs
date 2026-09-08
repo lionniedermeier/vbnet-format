@@ -51,6 +51,16 @@ internal static class Program
             Description = "Format the files in place. Without it the formatted source is written to standard output and the files are left untouched.",
         };
 
+        var verbose = new Option<bool>("--verbose", "-v")
+        {
+            Description = "Print one line per formatted file with the time it took.",
+        };
+
+        var summary = new Option<bool>("--summary")
+        {
+            Description = "Print how many files were formatted and how long the run took.",
+        };
+
         var maxLineLength = new Option<int?>("--max-line-length")
         {
             Description = "The column width lines are wrapped at (default 120). A target, not a hard ceiling.",
@@ -119,8 +129,8 @@ internal static class Program
         root.Arguments.Add(paths);
         Option[] all =
         [
-            check, diff, stdin, write, maxLineLength, indentSize, useTabs, endOfLine, languageVersion,
-            noOrganizeImports, config, ignorePath, noRespectGitignore, noIgnore,
+            check, diff, stdin, write, verbose, summary, maxLineLength, indentSize, useTabs, endOfLine,
+            languageVersion, noOrganizeImports, config, ignorePath, noRespectGitignore, noIgnore,
         ];
 
         foreach (var option in all)
@@ -161,6 +171,8 @@ internal static class Program
                     result.GetValue(write),
                     result.GetValue(check),
                     result.GetValue(diff),
+                    result.GetValue(verbose),
+                    result.GetValue(summary),
                     Console.Out);
         }));
 
@@ -312,6 +324,8 @@ internal static class Program
         bool write,
         bool check,
         bool diff,
+        bool verbose,
+        bool summary,
         TextWriter output)
     {
         var matched = Resolve(paths).ToList();
@@ -370,12 +384,18 @@ internal static class Program
             {
                 File.WriteAllText(file, result.Text);
                 formatted++;
-                output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms");
+                if (verbose)
+                {
+                    output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms");
+                }
             }
             else
             {
                 unchanged++;
-                output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms (unchanged)");
+                if (verbose)
+                {
+                    output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms (unchanged)");
+                }
             }
 
             if ((check || diff) && exitCode == ExitOk)
@@ -384,7 +404,7 @@ internal static class Program
             }
         }
 
-        if (write && formatted + unchanged > 0)
+        if (write && summary && formatted + unchanged > 0)
         {
             output.WriteLine(
                 $"{formatted} formatted, {unchanged} unchanged in {Millis(runStart)}ms");

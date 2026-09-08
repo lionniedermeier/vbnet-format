@@ -10,9 +10,14 @@ namespace VisualBasicFormatter.Language.Module;
 internal static class CompilationUnitRule
 {
     /// <summary>Prints <paramref name="node"/>.</summary>
-    public static Doc Format(CompilationUnitSyntax node, VbDocVisitor visitor, FormatContext context)
+    public static Doc Format(
+        CompilationUnitSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context
+    )
     {
-        var members = node.Options.Cast<SyntaxNode>()
+        var members = node
+            .Options.Cast<SyntaxNode>()
             .Concat(node.Imports)
             .Concat(node.Attributes)
             .Concat(node.Members)
@@ -35,9 +40,11 @@ internal static class CompilationUnitRule
         // Comments after the last declaration hang on the end-of-file token and are lost easily.
         var epilogue = TriviaPrinter.Leading(node.EndOfFileToken, context);
 
-        parts.Add(Doc.IsNothing(epilogue)
-            ? Doc.HardLine
-            : Doc.Concat(context.Separator(node.EndOfFileToken), epilogue));
+        parts.Add(
+            Doc.IsNothing(epilogue)
+                ? Doc.HardLine
+                : Doc.Concat(context.Separator(node.EndOfFileToken), epilogue)
+        );
 
         return Doc.Concat(parts.DrainToImmutable());
     }

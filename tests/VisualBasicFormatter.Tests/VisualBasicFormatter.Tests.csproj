@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>VisualBasicFormatter.Tests</RootNamespace>
@@ -26,5 +25,4 @@
     <ProjectReference Include="..\..\src\VisualBasicFormatter\VisualBasicFormatter.csproj" />
     <ProjectReference Include="..\..\src\VisualBasicFormatter.Cli\VisualBasicFormatter.Cli.csproj" />
   </ItemGroup>
-
 </Project>

@@ -16,30 +16,58 @@ internal static class XmlTagRule
         XmlElementStartTagSyntax node,
         VbDocVisitor visitor,
         FormatContext context,
-        bool broken) =>
-        Tag(node.LessThanToken, node.Name, node.Attributes, node.GreaterThanToken, visitor, context, broken);
+        bool broken
+    ) =>
+        Tag(
+            node.LessThanToken,
+            node.Name,
+            node.Attributes,
+            node.GreaterThanToken,
+            visitor,
+            context,
+            broken
+        );
 
     /// <summary>An element that is only a tag: <c>&lt;name attr…/&gt;</c>.</summary>
     public static Doc Format(
         XmlEmptyElementSyntax node,
         VbDocVisitor visitor,
         FormatContext context,
-        bool broken) =>
-        Tag(node.LessThanToken, node.Name, node.Attributes, node.SlashGreaterThanToken, visitor, context, broken);
+        bool broken
+    ) =>
+        Tag(
+            node.LessThanToken,
+            node.Name,
+            node.Attributes,
+            node.SlashGreaterThanToken,
+            visitor,
+            context,
+            broken
+        );
 
     /// <summary>The end tag: <c>&lt;/name&gt;</c>, which holds nothing that could break.</summary>
-    public static Doc Format(XmlElementEndTagSyntax node, VbDocVisitor visitor, FormatContext context) =>
+    public static Doc Format(
+        XmlElementEndTagSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context
+    ) =>
         Doc.Concat(
             context.Token(node.LessThanSlashToken),
             visitor.Format(node.Name),
-            context.Token(node.GreaterThanToken));
+            context.Token(node.GreaterThanToken)
+        );
 
     /// <summary><c>name="value"</c>. XML permits spaces around the <c>=</c>; none are written.</summary>
-    public static Doc Format(XmlAttributeSyntax node, VbDocVisitor visitor, FormatContext context) =>
+    public static Doc Format(
+        XmlAttributeSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context
+    ) =>
         Doc.Concat(
             visitor.Format(node.Name),
             context.Token(node.EqualsToken),
-            visitor.Format(node.Value));
+            visitor.Format(node.Value)
+        );
 
     private static Doc Tag(
         SyntaxToken open,
@@ -48,7 +76,8 @@ internal static class XmlTagRule
         SyntaxToken close,
         VbDocVisitor visitor,
         FormatContext context,
-        bool broken)
+        bool broken
+    )
     {
         var head = Doc.Concat(context.Token(open), visitor.Format(name));
 
@@ -72,7 +101,8 @@ internal static class XmlTagRule
         SyntaxList<XmlNodeSyntax> attributes,
         VbDocVisitor visitor,
         FormatContext context,
-        bool broken)
+        bool broken
+    )
     {
         var items = ImmutableArray.CreateBuilder<Doc>();
 

@@ -12,7 +12,10 @@ public sealed class WriteModeTests : IDisposable
         "Module M\r\nSub S()\r\nDim x = 1\r\nEnd Sub\r\nEnd Module\r\n";
 
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "vbnet-format-tests", Guid.NewGuid().ToString("n"));
+        Path.GetTempPath(),
+        "vbnet-format-tests",
+        Guid.NewGuid().ToString("n")
+    );
 
     public WriteModeTests() => Directory.CreateDirectory(_root);
 
@@ -144,13 +147,30 @@ public sealed class WriteModeTests : IDisposable
         Assert.Equal(ExitOk, Run(new StringWriter()));
     }
 
-    private int Run(TextWriter output, bool write = false, bool verbose = false, bool summary = false) =>
+    private int Run(
+        TextWriter output,
+        bool write = false,
+        bool verbose = false,
+        bool summary = false
+    ) =>
         Program.RunFiles(
-            [_root], _root, IgnoreSet.Empty, new FormatterOptions(), write, check: false, diff: false,
-            verbose, summary, output);
+            [_root],
+            _root,
+            IgnoreSet.Empty,
+            new FormatterOptions(),
+            write,
+            check: false,
+            diff: false,
+            verbose,
+            summary,
+            output
+        );
 
     private static string[] Lines(TextWriter output) =>
-        (output.ToString() ?? string.Empty).Split('\n').Select(line => line.TrimEnd('\r')).ToArray();
+        (output.ToString() ?? string.Empty)
+            .Split('\n')
+            .Select(line => line.TrimEnd('\r'))
+            .ToArray();
 
     private static string Line(TextWriter output, string contains) =>
         Lines(output).Single(line => line.Contains(contains));

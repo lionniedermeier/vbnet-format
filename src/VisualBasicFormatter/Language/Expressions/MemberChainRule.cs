@@ -25,14 +25,17 @@ internal static class MemberChainRule
 
         var dots = ImmutableArray.CreateBuilder<SyntaxToken>();
 
-        for (ExpressionSyntax? current = node; current is not null;)
+        for (ExpressionSyntax? current = node; current is not null; )
         {
             switch (current)
             {
                 // A missing Expression is the leading dot of a With block, of an initializer key or
                 // of a conditional access -- the cases where VB does demand an underscore.
                 case MemberAccessExpressionSyntax access when access.Expression is not null:
-                    if (IsInvoked(access) && ContinuationPoints.IsImplicitAfter(access.OperatorToken))
+                    if (
+                        IsInvoked(access)
+                        && ContinuationPoints.IsImplicitAfter(access.OperatorToken)
+                    )
                     {
                         dots.Add(access.OperatorToken);
                     }
@@ -65,10 +68,11 @@ internal static class MemberChainRule
     private static bool IsInvoked(MemberAccessExpressionSyntax access) =>
         access.Parent is InvocationExpressionSyntax invocation && invocation.Expression == access;
 
-    private static bool ContinuesUpwards(InvocationExpressionSyntax node) => node.Parent switch
-    {
-        MemberAccessExpressionSyntax access => access.Expression == node,
-        InvocationExpressionSyntax invocation => invocation.Expression == node,
-        _ => false,
-    };
+    private static bool ContinuesUpwards(InvocationExpressionSyntax node) =>
+        node.Parent switch
+        {
+            MemberAccessExpressionSyntax access => access.Expression == node,
+            InvocationExpressionSyntax invocation => invocation.Expression == node,
+            _ => false,
+        };
 }

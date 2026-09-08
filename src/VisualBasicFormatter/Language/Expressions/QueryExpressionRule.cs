@@ -20,7 +20,8 @@ internal static class QueryExpressionRule
         QueryExpressionSyntax node,
         VbDocVisitor visitor,
         FormatContext context,
-        bool aligned = true)
+        bool aligned = true
+    )
     {
         var items = ImmutableArray.CreateBuilder<Doc>();
 

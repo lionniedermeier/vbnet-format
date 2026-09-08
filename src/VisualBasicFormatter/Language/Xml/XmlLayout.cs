@@ -12,7 +12,11 @@ internal static class XmlLayout
     {
         var root = node;
 
-        for (var ancestor = node.Parent; ancestor is not null and not StatementSyntax; ancestor = ancestor.Parent)
+        for (
+            var ancestor = node.Parent;
+            ancestor is not null and not StatementSyntax;
+            ancestor = ancestor.Parent
+        )
         {
             if (ancestor is XmlNodeSyntax xml)
             {

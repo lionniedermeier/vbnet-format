@@ -15,19 +15,31 @@ internal static class Program
     private const string ConfigFileName = ".vbnet-format.json";
 
     private static readonly string[] IgnoreFileNames =
-        [".vbnetformatignore", ".vbfmtignore", ".vbnet-formatignore", ".vbnet-format-ignore"];
+    [
+        ".vbnetformatignore",
+        ".vbfmtignore",
+        ".vbnet-formatignore",
+        ".vbnet-format-ignore",
+    ];
 
     private static readonly string[] AlwaysExcluded =
-        ["bin", "obj", "node_modules", ".git", ".svn", ".hg"];
+    [
+        "bin",
+        "obj",
+        "node_modules",
+        ".git",
+        ".svn",
+        ".hg",
+    ];
 
-    private static readonly string[] AlwaysExcludedFiles =
-        ["**/*.Designer.vb"];
+    private static readonly string[] AlwaysExcludedFiles = ["**/*.Designer.vb"];
 
     private static int Main(string[] args)
     {
         var paths = new Argument<string[]>("paths")
         {
-            Description = "Files, directories or glob patterns. Directories are searched for **/*.vb, skipping generated *.Designer.vb files.",
+            Description =
+                "Files, directories or glob patterns. Directories are searched for **/*.vb, skipping generated *.Designer.vb files.",
             Arity = ArgumentArity.ZeroOrMore,
         };
 
@@ -43,12 +55,14 @@ internal static class Program
 
         var stdin = new Option<bool>("--stdin")
         {
-            Description = "Read source from standard input and write the formatted result to standard output.",
+            Description =
+                "Read source from standard input and write the formatted result to standard output.",
         };
 
         var write = new Option<bool>("--write", "-w")
         {
-            Description = "Format the files in place. Without it the formatted source is written to standard output and the files are left untouched.",
+            Description =
+                "Format the files in place. Without it the formatted source is written to standard output and the files are left untouched.",
         };
 
         var verbose = new Option<bool>("--verbose", "-v")
@@ -63,7 +77,8 @@ internal static class Program
 
         var maxLineLength = new Option<int?>("--max-line-length")
         {
-            Description = "The column width lines are wrapped at (default 120). A target, not a hard ceiling.",
+            Description =
+                "The column width lines are wrapped at (default 120). A target, not a hard ceiling.",
         };
 
         var indentSize = new Option<int?>("--indent-size")
@@ -78,12 +93,14 @@ internal static class Program
 
         var endOfLine = new Option<EndOfLine?>("--end-of-line")
         {
-            Description = "Line ending of the output: Auto (default, follows the file), Lf or CrLf.",
+            Description =
+                "Line ending of the output: Auto (default, follows the file), Lf or CrLf.",
         };
 
         var languageVersion = new Option<string?>("--language-version")
         {
-            Description = "The VB language version the parser assumes, e.g. 16.9 or latest (default).",
+            Description =
+                "The VB language version the parser assumes, e.g. 16.9 or latest (default).",
         };
 
         var noOrganizeImports = new Option<bool>("--no-organize-imports")
@@ -98,7 +115,8 @@ internal static class Program
 
         var ignorePath = new Option<string[]>("--ignore-path")
         {
-            Description = $"Path to a file of ignore patterns. Repeatable; replaces .gitignore and {string.Join("/", IgnoreFileNames)}.",
+            Description =
+                $"Path to a file of ignore patterns. Repeatable; replaces .gitignore and {string.Join("/", IgnoreFileNames)}.",
             Arity = ArgumentArity.ZeroOrMore,
         };
 
@@ -119,18 +137,34 @@ internal static class Program
 
         var init = new Command(
             "init",
-            $"Write a {ConfigFileName} with the default options into the working directory.");
+            $"Write a {ConfigFileName} with the default options into the working directory."
+        );
         init.Options.Add(force);
         init.SetAction(result =>
-            Guarded(() => RunInit(Directory.GetCurrentDirectory(), result.GetValue(force))));
+            Guarded(() => RunInit(Directory.GetCurrentDirectory(), result.GetValue(force)))
+        );
 
         var root = new RootCommand("vbnet-format - a formatter for VB.NET source.");
         root.Subcommands.Add(init);
         root.Arguments.Add(paths);
         Option[] all =
         [
-            check, diff, stdin, write, verbose, summary, maxLineLength, indentSize, useTabs, endOfLine,
-            languageVersion, noOrganizeImports, config, ignorePath, noRespectGitignore, noIgnore,
+            check,
+            diff,
+            stdin,
+            write,
+            verbose,
+            summary,
+            maxLineLength,
+            indentSize,
+            useTabs,
+            endOfLine,
+            languageVersion,
+            noOrganizeImports,
+            config,
+            ignorePath,
+            noRespectGitignore,
+            noIgnore,
         ];
 
         foreach (var option in all)
@@ -138,43 +172,51 @@ internal static class Program
             root.Options.Add(option);
         }
 
-        root.SetAction(result => Guarded(() =>
-        {
-            if (result.GetValue(write)
-                && (result.GetValue(check) || result.GetValue(diff) || result.GetValue(stdin)))
+        root.SetAction(result =>
+            Guarded(() =>
             {
-                Console.Error.WriteLine(
-                    "vbnet-format: --write cannot be combined with --check, --diff or --stdin.");
-                return ExitError;
-            }
+                if (
+                    result.GetValue(write)
+                    && (result.GetValue(check) || result.GetValue(diff) || result.GetValue(stdin))
+                )
+                {
+                    Console.Error.WriteLine(
+                        "vbnet-format: --write cannot be combined with --check, --diff or --stdin."
+                    );
+                    return ExitError;
+                }
 
-            var options = BuildOptions(
-                result.GetValue(config),
-                result.GetValue(maxLineLength),
-                result.GetValue(indentSize),
-                result.GetValue(useTabs),
-                result.GetValue(endOfLine),
-                result.GetValue(languageVersion),
-                result.GetValue(noOrganizeImports));
+                var options = BuildOptions(
+                    result.GetValue(config),
+                    result.GetValue(maxLineLength),
+                    result.GetValue(indentSize),
+                    result.GetValue(useTabs),
+                    result.GetValue(endOfLine),
+                    result.GetValue(languageVersion),
+                    result.GetValue(noOrganizeImports)
+                );
 
-            return result.GetValue(stdin)
-                ? RunStdin(options)
-                : RunFiles(
-                    result.GetValue(paths) ?? [],
-                    Directory.GetCurrentDirectory(),
-                    DiscoverIgnores(
+                return result.GetValue(stdin)
+                    ? RunStdin(options)
+                    : RunFiles(
+                        result.GetValue(paths) ?? [],
                         Directory.GetCurrentDirectory(),
-                        result.GetValue(ignorePath) ?? [],
-                        !result.GetValue(noRespectGitignore),
-                        result.GetValue(noIgnore)),
-                    options,
-                    result.GetValue(write),
-                    result.GetValue(check),
-                    result.GetValue(diff),
-                    result.GetValue(verbose),
-                    result.GetValue(summary),
-                    Console.Out);
-        }));
+                        DiscoverIgnores(
+                            Directory.GetCurrentDirectory(),
+                            result.GetValue(ignorePath) ?? [],
+                            !result.GetValue(noRespectGitignore),
+                            result.GetValue(noIgnore)
+                        ),
+                        options,
+                        result.GetValue(write),
+                        result.GetValue(check),
+                        result.GetValue(diff),
+                        result.GetValue(verbose),
+                        result.GetValue(summary),
+                        Console.Out
+                    );
+            })
+        );
 
         return root.Parse(args).Invoke();
     }
@@ -185,7 +227,8 @@ internal static class Program
         {
             return action();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             Console.Error.WriteLine($"vbnet-format: {ex.Message}");
             return ExitError;
@@ -198,7 +241,9 @@ internal static class Program
 
         if (File.Exists(path) && !force)
         {
-            Console.Error.WriteLine($"vbnet-format: {path} already exists. Pass --force to overwrite.");
+            Console.Error.WriteLine(
+                $"vbnet-format: {path} already exists. Pass --force to overwrite."
+            );
             return ExitError;
         }
 
@@ -214,7 +259,8 @@ internal static class Program
         bool useTabs,
         EndOfLine? endOfLine,
         string? languageVersion,
-        bool noOrganizeImports)
+        bool noOrganizeImports
+    )
     {
         var options = new FormatterOptions();
 
@@ -247,7 +293,10 @@ internal static class Program
 
         if (languageVersion is not null)
         {
-            options = options with { LanguageVersion = ConfigFile.ParseLanguageVersion(languageVersion) };
+            options = options with
+            {
+                LanguageVersion = ConfigFile.ParseLanguageVersion(languageVersion),
+            };
         }
 
         if (noOrganizeImports)
@@ -260,7 +309,11 @@ internal static class Program
 
     private static string? DiscoverConfig()
     {
-        for (var dir = new DirectoryInfo(Directory.GetCurrentDirectory()); dir is not null; dir = dir.Parent)
+        for (
+            var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            dir is not null;
+            dir = dir.Parent
+        )
         {
             var candidate = Path.Combine(dir.FullName, ConfigFileName);
             if (File.Exists(candidate))
@@ -276,7 +329,8 @@ internal static class Program
         string baseDirectory,
         string[] ignorePaths,
         bool respectGitignore,
-        bool noIgnore)
+        bool noIgnore
+    )
     {
         if (noIgnore)
         {
@@ -289,7 +343,9 @@ internal static class Program
         }
 
         var files = new List<IgnoreFile>();
-        string[] candidates = respectGitignore ? [".gitignore", .. IgnoreFileNames] : IgnoreFileNames;
+        string[] candidates = respectGitignore
+            ? [".gitignore", .. IgnoreFileNames]
+            : IgnoreFileNames;
 
         foreach (var candidate in candidates)
         {
@@ -326,7 +382,8 @@ internal static class Program
         bool diff,
         bool verbose,
         bool summary,
-        TextWriter output)
+        TextWriter output
+    )
     {
         var matched = Resolve(paths).ToList();
         var files = matched.Where(file => !ignores.IsIgnored(file)).ToList();
@@ -394,7 +451,9 @@ internal static class Program
                 unchanged++;
                 if (verbose)
                 {
-                    output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms (unchanged)");
+                    output.WriteLine(
+                        $"{DisplayPath(root, file)} {Millis(fileStart)}ms (unchanged)"
+                    );
                 }
             }
 
@@ -407,7 +466,8 @@ internal static class Program
         if (write && summary && formatted + unchanged > 0)
         {
             output.WriteLine(
-                $"{formatted} formatted, {unchanged} unchanged in {Millis(runStart)}ms");
+                $"{formatted} formatted, {unchanged} unchanged in {Millis(runStart)}ms"
+            );
         }
 
         return exitCode;

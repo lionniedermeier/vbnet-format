@@ -41,10 +41,12 @@ internal sealed class FormatContext
     /// A token with the comments that hang on it. The whitespace that separated it from its
     /// neighbours is deliberately not emitted: spacing is the rule's decision, not the input's.
     /// </summary>
-    public Doc Token(SyntaxToken token) => Doc.Concat(
-        TriviaPrinter.Leading(token, this),
-        Doc.Text(token.Text),
-        TriviaPrinter.Trailing(token, this));
+    public Doc Token(SyntaxToken token) =>
+        Doc.Concat(
+            TriviaPrinter.Leading(token, this),
+            Doc.Text(token.Text),
+            TriviaPrinter.Trailing(token, this)
+        );
 
     /// <summary>
     /// A break the language permits behind <paramref name="token"/>, rendered as a space while the

@@ -19,7 +19,11 @@ internal static class AttributePlacementRule
     /// <param name="previous">The neighbour on the left.</param>
     /// <param name="next">The neighbour on the right, whose leading blank lines are honoured.</param>
     /// <param name="context">Options and the line break itself.</param>
-    public static Doc? Break(SyntaxNodeOrToken previous, SyntaxNodeOrToken next, FormatContext context) =>
+    public static Doc? Break(
+        SyntaxNodeOrToken previous,
+        SyntaxNodeOrToken next,
+        FormatContext context
+    ) =>
         previous.AsNode() is AttributeListSyntax list && StandsAlone(list)
             ? context.Separator(next.IsToken ? next.AsToken() : next.AsNode()!.GetFirstToken())
             : null;

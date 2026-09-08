@@ -10,10 +10,7 @@ namespace VisualBasicFormatter;
 /// <remarks>
 /// A line that ends up over the limit is not reported.
 /// </remarks>
-public sealed record FormatResult(
-    string Text,
-    bool Changed,
-    ImmutableArray<Diagnostic> Diagnostics)
+public sealed record FormatResult(string Text, bool Changed, ImmutableArray<Diagnostic> Diagnostics)
 {
     /// <summary>The source could not be processed and was returned unchanged.</summary>
     public bool HasErrors => !Diagnostics.IsDefaultOrEmpty;

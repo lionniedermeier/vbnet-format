@@ -5,7 +5,10 @@ namespace VisualBasicFormatter.Tests;
 public sealed class FileDiscoveryTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "vbnet-format-tests", Guid.NewGuid().ToString("n"));
+        Path.GetTempPath(),
+        "vbnet-format-tests",
+        Guid.NewGuid().ToString("n")
+    );
 
     public FileDiscoveryTests() => Directory.CreateDirectory(_root);
 
@@ -65,7 +68,8 @@ public sealed class FileDiscoveryTests : IDisposable
                 Path.Combine(_root, "src", "b.vb"),
                 Path.Combine(_root, "src", "deep", "c.vb"),
             ],
-            Resolve());
+            Resolve()
+        );
     }
 
     private string[] Resolve() =>

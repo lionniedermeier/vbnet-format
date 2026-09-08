@@ -69,18 +69,21 @@ internal abstract class Doc
     /// A choice between prepared layouts of the same content, most compact first. The printer takes
     /// the first whose first line fits and falls back to the last.
     /// </summary>
-    public static Doc ConditionalGroup(params Doc[] states) => ConditionalGroup(states.ToImmutableArray());
+    public static Doc ConditionalGroup(params Doc[] states) =>
+        ConditionalGroup(states.ToImmutableArray());
 
     /// <inheritdoc cref="ConditionalGroup(Doc[])"/>
-    public static Doc ConditionalGroup(ImmutableArray<Doc> states) => states.Length switch
-    {
-        0 => Nothing,
-        1 => states[0],
-        _ => new DocConditionalGroup(states),
-    };
+    public static Doc ConditionalGroup(ImmutableArray<Doc> states) =>
+        states.Length switch
+        {
+            0 => Nothing,
+            1 => states[0],
+            _ => new DocConditionalGroup(states),
+        };
 
     /// <summary>Content one indent level deeper.</summary>
-    public static Doc Indent(Doc content) => content is DocNothing ? Nothing : new DocIndent(content);
+    public static Doc Indent(Doc content) =>
+        content is DocNothing ? Nothing : new DocIndent(content);
 
     /// <inheritdoc cref="Indent(Doc)"/>
     public static Doc Indent(params Doc[] parts) => Indent(Concat(parts));
@@ -93,28 +96,33 @@ internal abstract class Doc
 
     /// <summary>Emits <paramref name="whenBroken"/> or <paramref name="whenFlat"/> per the group's mode.</summary>
     public static Doc Conditional(Doc whenBroken, Doc whenFlat) =>
-        whenBroken is DocNothing && whenFlat is DocNothing ? Nothing : new DocConditional(whenBroken, whenFlat);
+        whenBroken is DocNothing && whenFlat is DocNothing
+            ? Nothing
+            : new DocConditional(whenBroken, whenFlat);
 
     /// <summary>Content held back until the current line ends.</summary>
-    public static Doc LineSuffix(Doc content) => content is DocNothing ? Nothing : new DocLineSuffix(content);
+    public static Doc LineSuffix(Doc content) =>
+        content is DocNothing ? Nothing : new DocLineSuffix(content);
 
     /// <summary>Source reproduced as it stands, with no break opportunity inside it.</summary>
-    public static Doc Verbatim(ImmutableArray<string> lines, VerbatimMode mode) => lines.Length switch
-    {
-        0 => Nothing,
-        1 when mode != VerbatimMode.Raw => Text(lines[0]),
-        _ => new DocVerbatim(lines, mode),
-    };
+    public static Doc Verbatim(ImmutableArray<string> lines, VerbatimMode mode) =>
+        lines.Length switch
+        {
+            0 => Nothing,
+            1 when mode != VerbatimMode.Raw => Text(lines[0]),
+            _ => new DocVerbatim(lines, mode),
+        };
 
     /// <summary>Greedy filling. <paramref name="parts"/> alternate content and separator.</summary>
     /// <param name="parts">Content and separator in turn, starting and ending with content.</param>
     /// <param name="strict">Measure the parts flat rather than in the enclosing mode.</param>
-    public static Doc Fill(ImmutableArray<Doc> parts, bool strict = false) => parts.Length switch
-    {
-        0 => Nothing,
-        1 => parts[0],
-        _ => new DocFill(parts, strict),
-    };
+    public static Doc Fill(ImmutableArray<Doc> parts, bool strict = false) =>
+        parts.Length switch
+        {
+            0 => Nothing,
+            1 => parts[0],
+            _ => new DocFill(parts, strict),
+        };
 
     /// <summary>
     /// The same doc with its outermost layout decision already taken in favour of breaking, or

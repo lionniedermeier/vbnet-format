@@ -16,7 +16,8 @@ internal static class XmlElementRule
         XmlElementSyntax node,
         VbDocVisitor visitor,
         FormatContext context,
-        bool broken)
+        bool broken
+    )
     {
         var start = XmlTagRule.Format(node.StartTag, visitor, context, broken);
         var end = XmlTagRule.Format(node.EndTag, visitor, context);
@@ -35,7 +36,8 @@ internal static class XmlElementRule
                 start,
                 Doc.Indent(context.XmlContentBreak(broken), items),
                 context.XmlContentBreak(broken),
-                end)
+                end
+            )
             : Doc.Concat(start, items, end);
     }
 
@@ -43,7 +45,8 @@ internal static class XmlElementRule
         SyntaxList<XmlNodeSyntax> content,
         VbDocVisitor visitor,
         FormatContext context,
-        bool broken)
+        bool broken
+    )
     {
         var items = ImmutableArray.CreateBuilder<Doc>();
 

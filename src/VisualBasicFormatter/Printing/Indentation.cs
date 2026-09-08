@@ -13,7 +13,11 @@ internal readonly record struct Indentation(string Text, int Width)
     public static Indentation At(int column) => new(new string(' ', column), column);
 
     /// <summary>One level deeper.</summary>
-    public Indentation Increase(PrintOptions options) => options.UseTabs
-        ? new Indentation(Text + '\t', TextWidth.Advance(Width, '\t', options.IndentSize))
-        : new Indentation(Text + new string(' ', options.IndentSize), Width + options.IndentSize);
+    public Indentation Increase(PrintOptions options) =>
+        options.UseTabs
+            ? new Indentation(Text + '\t', TextWidth.Advance(Width, '\t', options.IndentSize))
+            : new Indentation(
+                Text + new string(' ', options.IndentSize),
+                Width + options.IndentSize
+            );
 }

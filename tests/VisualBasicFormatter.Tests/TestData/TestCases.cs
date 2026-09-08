@@ -26,7 +26,8 @@ public static class TestCases
 
     /// <inheritdoc cref="Names"/>
     public static IEnumerable<string> All() =>
-        System.IO.Directory.EnumerateFiles(Directory, "*.vb")
+        System
+            .IO.Directory.EnumerateFiles(Directory, "*.vb")
             .Where(f => !f.EndsWith(".expected.vb", StringComparison.OrdinalIgnoreCase))
             .Order(StringComparer.Ordinal)
             .Select(Path.GetFileNameWithoutExtension)

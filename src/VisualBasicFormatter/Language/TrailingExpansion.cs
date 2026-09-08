@@ -24,15 +24,16 @@ namespace VisualBasicFormatter.Language;
 internal static class TrailingExpansion
 {
     /// <summary>Whether <paramref name="element"/> offers a break worth trying on its own.</summary>
-    public static bool IsExpandable(SyntaxNode element) => Inner(element) switch
-    {
-        ObjectCreationExpressionSyntax creation => creation.Initializer is not null,
-        ArrayCreationExpressionSyntax
+    public static bool IsExpandable(SyntaxNode element) =>
+        Inner(element) switch
+        {
+            ObjectCreationExpressionSyntax creation => creation.Initializer is not null,
+            ArrayCreationExpressionSyntax
             or AnonymousObjectCreationExpressionSyntax
             or CollectionInitializerSyntax
             or LambdaExpressionSyntax => true,
-        _ => false,
-    };
+            _ => false,
+        };
 
     /// <summary>
     /// Whether <paramref name="element"/> brings its own indented body -- a multi-line lambda. Such
@@ -59,15 +60,17 @@ internal static class TrailingExpansion
     /// the code" and a <c>Sub</c> lambda argument in it, this is the first place to look.
     /// </para>
     /// </remarks>
-    public static bool IsBlock(SyntaxNode element) => Inner(element) is MultiLineLambdaExpressionSyntax;
+    public static bool IsBlock(SyntaxNode element) =>
+        Inner(element) is MultiLineLambdaExpressionSyntax;
 
     /// <summary>The expression an element carries, past whatever wraps it in the list.</summary>
-    private static SyntaxNode? Inner(SyntaxNode? element) => element switch
-    {
-        SimpleArgumentSyntax argument => Inner(argument.Expression),
-        NamedFieldInitializerSyntax field => Inner(field.Expression),
-        InferredFieldInitializerSyntax field => Inner(field.Expression),
-        ParenthesizedExpressionSyntax parenthesized => Inner(parenthesized.Expression),
-        _ => element,
-    };
+    private static SyntaxNode? Inner(SyntaxNode? element) =>
+        element switch
+        {
+            SimpleArgumentSyntax argument => Inner(argument.Expression),
+            NamedFieldInitializerSyntax field => Inner(field.Expression),
+            InferredFieldInitializerSyntax field => Inner(field.Expression),
+            ParenthesizedExpressionSyntax parenthesized => Inner(parenthesized.Expression),
+            _ => element,
+        };
 }

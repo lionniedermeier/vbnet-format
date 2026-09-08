@@ -45,12 +45,14 @@ internal sealed partial class VbDocVisitor
     /// <c>&lt;%= expression %&gt;</c>. Inside it the ordinary VB rules apply again -- a query, a
     /// chain or an argument list breaks there exactly as it would outside a literal.
     /// </summary>
-    public override Doc VisitXmlEmbeddedExpression(XmlEmbeddedExpressionSyntax node) => Doc.Group(
-        _context.Token(node.LessThanPercentEqualsToken),
-        Doc.Space,
-        Doc.Align(Format(node.Expression)),
-        Doc.Line,
-        _context.Token(node.PercentGreaterThanToken));
+    public override Doc VisitXmlEmbeddedExpression(XmlEmbeddedExpressionSyntax node) =>
+        Doc.Group(
+            _context.Token(node.LessThanPercentEqualsToken),
+            Doc.Space,
+            Doc.Align(Format(node.Expression)),
+            Doc.Line,
+            _context.Token(node.PercentGreaterThanToken)
+        );
 
     /// <inheritdoc/>
     public override Doc VisitXmlName(XmlNameSyntax node) =>
@@ -61,10 +63,12 @@ internal sealed partial class VbDocVisitor
         Doc.Concat(_context.Token(node.Name), _context.Token(node.ColonToken));
 
     /// <summary>A name in angle brackets, as an axis property writes it: <c>doc.&lt;item&gt;</c>.</summary>
-    public override Doc VisitXmlBracketedName(XmlBracketedNameSyntax node) => Doc.Concat(
-        _context.Token(node.LessThanToken),
-        Format(node.Name),
-        _context.Token(node.GreaterThanToken));
+    public override Doc VisitXmlBracketedName(XmlBracketedNameSyntax node) =>
+        Doc.Concat(
+            _context.Token(node.LessThanToken),
+            Format(node.Name),
+            _context.Token(node.GreaterThanToken)
+        );
 
     // Content whose own characters are the point. Each may legally span lines -- an attribute value
     // as much as a CDATA section -- which no Doc.Text may, so all of them go to the verbatim

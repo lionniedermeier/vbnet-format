@@ -42,7 +42,8 @@ internal static class VbDocBuilder
         SyntaxToken close,
         ListLayout layout,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context
+    )
         where T : SyntaxNode =>
         List(
             open,
@@ -53,7 +54,8 @@ internal static class VbDocBuilder
             list.Count > 0 && TrailingExpansion.IsExpandable(list[^1]),
             list.Any(TrailingExpansion.IsBlock),
             layout,
-            context);
+            context
+        );
 
     /// <inheritdoc cref="List{T}(SyntaxToken, Doc, SeparatedSyntaxList{T}, SyntaxToken, ListLayout, VbDocVisitor, FormatContext)"/>
     public static Doc List<T>(
@@ -62,9 +64,9 @@ internal static class VbDocBuilder
         SyntaxToken close,
         ListLayout layout,
         VbDocVisitor visitor,
-        FormatContext context)
-        where T : SyntaxNode =>
-        List(open, Doc.Nothing, list, close, layout, visitor, context);
+        FormatContext context
+    )
+        where T : SyntaxNode => List(open, Doc.Nothing, list, close, layout, visitor, context);
 
     /// <summary>
     /// The same, for a construct whose elements are not a <see cref="SeparatedSyntaxList{T}"/> --
@@ -94,7 +96,8 @@ internal static class VbDocBuilder
         bool expandLast,
         bool hasBlock,
         ListLayout layout,
-        FormatContext context)
+        FormatContext context
+    )
     {
         var items = Items(prefix, elements, separators, context);
 
@@ -112,7 +115,12 @@ internal static class VbDocBuilder
         // call on one line and break inside itself instead.
         if (separators.IsEmpty)
         {
-            return Doc.Concat(context.Token(open), prefix, Doc.Concat(elements), context.Token(close));
+            return Doc.Concat(
+                context.Token(open),
+                prefix,
+                Doc.Concat(elements),
+                context.Token(close)
+            );
         }
 
         var content = Bracketed(open, items, close, layout, context);
@@ -144,8 +152,10 @@ internal static class VbDocBuilder
                 Items(prefix, elements.SetItem(elements.Length - 1, expanded), separators, context),
                 close,
                 ListLayout.OnePerLine,
-                context),
-            Doc.Group(content, shouldBreak: true));
+                context
+            ),
+            Doc.Group(content, shouldBreak: true)
+        );
     }
 
     /// <summary>
@@ -178,7 +188,8 @@ internal static class VbDocBuilder
         Doc prefix,
         ImmutableArray<Doc> elements,
         ImmutableArray<SyntaxToken> separators,
-        FormatContext context)
+        FormatContext context
+    )
     {
         var items = ImmutableArray.CreateBuilder<Doc>();
 
@@ -218,14 +229,19 @@ internal static class VbDocBuilder
         ImmutableArray<Doc> items,
         SyntaxToken close,
         ListLayout layout,
-        FormatContext context)
+        FormatContext context
+    )
     {
         var body = Doc.Concat(items);
 
         return Doc.Concat(
             context.Token(open),
-            Doc.Indent(context.SoftBreakAfter(open), layout == ListLayout.Packed ? Doc.Group(body) : body),
+            Doc.Indent(
+                context.SoftBreakAfter(open),
+                layout == ListLayout.Packed ? Doc.Group(body) : body
+            ),
             context.SoftBreakBefore(close),
-            context.Token(close));
+            context.Token(close)
+        );
     }
 }

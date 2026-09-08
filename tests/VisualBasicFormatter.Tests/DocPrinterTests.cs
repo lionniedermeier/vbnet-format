@@ -6,7 +6,11 @@ namespace VisualBasicFormatter.Tests;
 /// <summary>The IR and the printer on their own, without any VB in the picture.</summary>
 public sealed class DocPrinterTests
 {
-    private static PrintOptions Options(int maxLineLength = 80, int indentSize = 4, bool useTabs = false) =>
+    private static PrintOptions Options(
+        int maxLineLength = 80,
+        int indentSize = 4,
+        bool useTabs = false
+    ) =>
         new()
         {
             MaxLineLength = maxLineLength,
@@ -48,10 +52,13 @@ public sealed class DocPrinterTests
     [Fact]
     public void RemeasuresNestedGroups()
     {
-        var doc = Doc.Group(Doc.Concat(
-            Doc.Text("aaa"),
-            Doc.Line,
-            Doc.Group(Doc.Concat(Doc.Text("b"), Doc.Line, Doc.Text("c")))));
+        var doc = Doc.Group(
+            Doc.Concat(
+                Doc.Text("aaa"),
+                Doc.Line,
+                Doc.Group(Doc.Concat(Doc.Text("b"), Doc.Line, Doc.Text("c")))
+            )
+        );
 
         Assert.Equal("aaa\nb c", Print(doc, Options(maxLineLength: 5)));
     }
@@ -68,7 +75,8 @@ public sealed class DocPrinterTests
             Doc.Text("Foo("),
             Doc.Indent(Doc.SoftLine, Doc.Concat(Doc.Text("a"), Doc.HardLine, Doc.Text("b"))),
             Doc.SoftLine,
-            Doc.Text(")"));
+            Doc.Text(")")
+        );
 
         Assert.Equal("Foo(\n    a\n    b\n)", Print(doc));
     }
@@ -82,7 +90,8 @@ public sealed class DocPrinterTests
     {
         var doc = Doc.Concat(
             Doc.Group(Doc.Concat(Doc.Text("ab"), Doc.SoftLine, Doc.Text("cd"))),
-            Doc.Text("EFGH"));
+            Doc.Text("EFGH")
+        );
 
         Assert.Equal("ab\ncdEFGH", Print(doc, Options(maxLineLength: 6)));
     }
@@ -91,10 +100,13 @@ public sealed class DocPrinterTests
     [Fact]
     public void ForcesTheOuterGroupThroughAHardBreak()
     {
-        var doc = Doc.Group(Doc.Concat(
-            Doc.Text("a"),
-            Doc.SoftLine,
-            Doc.Group(Doc.Concat(Doc.Text("b"), Doc.HardLine, Doc.Text("c")))));
+        var doc = Doc.Group(
+            Doc.Concat(
+                Doc.Text("a"),
+                Doc.SoftLine,
+                Doc.Group(Doc.Concat(Doc.Text("b"), Doc.HardLine, Doc.Text("c")))
+            )
+        );
 
         Assert.Equal("a\nb\nc", Print(doc));
     }
@@ -102,7 +114,10 @@ public sealed class DocPrinterTests
     [Fact]
     public void IndentsWithTabsAndCountsThemAsOneLevel()
     {
-        var doc = Doc.Indent(Doc.HardLine, Doc.Group(Doc.Concat(Doc.Text("ab"), Doc.SoftLine, Doc.Text("cd"))));
+        var doc = Doc.Indent(
+            Doc.HardLine,
+            Doc.Group(Doc.Concat(Doc.Text("ab"), Doc.SoftLine, Doc.Text("cd")))
+        );
 
         // Indent 4 + "abcd" is 8 and exceeds 6, so the group breaks. Were the tab counted as one
         // column the group would fit and stay flat.
@@ -112,10 +127,13 @@ public sealed class DocPrinterTests
     [Fact]
     public void AlignsAtTheCurrentColumn()
     {
-        var doc = Doc.Group(Doc.Concat(
-            Doc.Text("Foo("),
-            Doc.Align(Doc.Concat(Doc.Text("a,"), Doc.Line, Doc.Text("b"))),
-            Doc.Text(")")));
+        var doc = Doc.Group(
+            Doc.Concat(
+                Doc.Text("Foo("),
+                Doc.Align(Doc.Concat(Doc.Text("a,"), Doc.Line, Doc.Text("b"))),
+                Doc.Text(")")
+            )
+        );
 
         Assert.Equal("Foo(a,\n    b)", Print(doc, Options(maxLineLength: 6)));
     }
@@ -123,7 +141,12 @@ public sealed class DocPrinterTests
     [Fact]
     public void IndentsOneLevelDeeper()
     {
-        var doc = Doc.Concat(Doc.Text("Sub S()"), Doc.Indent(Doc.HardLine, Doc.Text("x")), Doc.HardLine, Doc.Text("End Sub"));
+        var doc = Doc.Concat(
+            Doc.Text("Sub S()"),
+            Doc.Indent(Doc.HardLine, Doc.Text("x")),
+            Doc.HardLine,
+            Doc.Text("End Sub")
+        );
 
         Assert.Equal("Sub S()\n    x\nEnd Sub", Print(doc));
     }
@@ -143,7 +166,8 @@ public sealed class DocPrinterTests
             Doc.Text("code"),
             Doc.LineSuffix(Doc.Concat(Doc.Space, Doc.Text("' note"))),
             Doc.HardLine,
-            Doc.Text("next"));
+            Doc.Text("next")
+        );
 
         Assert.Equal("code ' note\nnext", Print(doc));
     }
@@ -152,7 +176,10 @@ public sealed class DocPrinterTests
     [Fact]
     public void EmitsALineSuffixEvenAtEndOfFile()
     {
-        var doc = Doc.Concat(Doc.Text("code"), Doc.LineSuffix(Doc.Concat(Doc.Space, Doc.Text("' note"))));
+        var doc = Doc.Concat(
+            Doc.Text("code"),
+            Doc.LineSuffix(Doc.Concat(Doc.Space, Doc.Text("' note")))
+        );
 
         Assert.Equal("code ' note", Print(doc));
     }
@@ -160,11 +187,14 @@ public sealed class DocPrinterTests
     [Fact]
     public void EmitsTheConditionalPartOnlyWhenBreaking()
     {
-        var doc = Doc.Group(Doc.Concat(
-            Doc.Text("a"),
-            Doc.Conditional(Doc.Text(" _"), Doc.Nothing),
-            Doc.Line,
-            Doc.Text("b")));
+        var doc = Doc.Group(
+            Doc.Concat(
+                Doc.Text("a"),
+                Doc.Conditional(Doc.Text(" _"), Doc.Nothing),
+                Doc.Line,
+                Doc.Text("b")
+            )
+        );
 
         Assert.Equal("a b", Print(doc));
         Assert.Equal("a _\nb", Print(doc, Options(maxLineLength: 2)));
@@ -173,12 +203,7 @@ public sealed class DocPrinterTests
     [Fact]
     public void FillsLinesGreedily()
     {
-        var doc = Doc.Fill(
-        [
-            Doc.Text("aa"), Doc.Line,
-            Doc.Text("bb"), Doc.Line,
-            Doc.Text("cc"),
-        ]);
+        var doc = Doc.Fill([Doc.Text("aa"), Doc.Line, Doc.Text("bb"), Doc.Line, Doc.Text("cc")]);
 
         Assert.Equal("aa bb\ncc", Print(doc, Options(maxLineLength: 5)));
     }
@@ -190,12 +215,15 @@ public sealed class DocPrinterTests
     [Fact]
     public void MeasuresFlatUnderStrictFilling()
     {
-        static Doc Parts(bool strict) => Doc.Fill(
-            [
-                Doc.Text("aa"), Doc.Line,
-                Doc.Group(Doc.Concat(Doc.Text("bb"), Doc.SoftLine, Doc.Text("cc"))),
-            ],
-            strict);
+        static Doc Parts(bool strict) =>
+            Doc.Fill(
+                [
+                    Doc.Text("aa"),
+                    Doc.Line,
+                    Doc.Group(Doc.Concat(Doc.Text("bb"), Doc.SoftLine, Doc.Text("cc"))),
+                ],
+                strict
+            );
 
         Assert.Equal("aa bb\ncc", Print(Parts(strict: false), Options(maxLineLength: 5)));
         Assert.Equal("aa\nbbcc", Print(Parts(strict: true), Options(maxLineLength: 5)));
@@ -213,10 +241,7 @@ public sealed class DocPrinterTests
     [Fact]
     public void TakesTheFirstChoiceThatFits()
     {
-        var doc = Doc.ConditionalGroup(
-            Doc.Text("aaaaaaaa"),
-            Doc.Text("bbbb"),
-            Doc.Text("cc"));
+        var doc = Doc.ConditionalGroup(Doc.Text("aaaaaaaa"), Doc.Text("bbbb"), Doc.Text("cc"));
 
         Assert.Equal("aaaaaaaa", Print(doc, Options(maxLineLength: 80)));
         Assert.Equal("bbbb", Print(doc, Options(maxLineLength: 5)));
@@ -236,7 +261,8 @@ public sealed class DocPrinterTests
 
         var doc = Doc.ConditionalGroup(
             Doc.Concat(Doc.Text("aaa "), Doc.Group(inner)),
-            Doc.Concat(Doc.Text("aaa "), Doc.Group(inner, shouldBreak: true)));
+            Doc.Concat(Doc.Text("aaa "), Doc.Group(inner, shouldBreak: true))
+        );
 
         Assert.Equal("aaa b\nc", Print(doc, Options(maxLineLength: 5)));
     }
@@ -250,8 +276,12 @@ public sealed class DocPrinterTests
     public void MeasuresAChoiceOnlyByItsOwnBreaks()
     {
         var doc = Doc.ConditionalGroup(
-            Doc.Concat(Doc.Text("aaaaaa "), Doc.Group(Doc.Concat(Doc.Text("b"), Doc.Line, Doc.Text("c")))),
-            Doc.Text("short"));
+            Doc.Concat(
+                Doc.Text("aaaaaa "),
+                Doc.Group(Doc.Concat(Doc.Text("b"), Doc.Line, Doc.Text("c")))
+            ),
+            Doc.Text("short")
+        );
 
         Assert.Equal("short", Print(doc, Options(maxLineLength: 5)));
     }
@@ -260,7 +290,10 @@ public sealed class DocPrinterTests
     [Fact]
     public void DoesNotLetTheForcedBreakEscapeOutward()
     {
-        var forced = Doc.Group(Doc.Concat(Doc.Text("b"), Doc.Line, Doc.Text("c")), shouldBreak: true);
+        var forced = Doc.Group(
+            Doc.Concat(Doc.Text("b"), Doc.Line, Doc.Text("c")),
+            shouldBreak: true
+        );
 
         static Doc Around(Doc inner) => Doc.Group(Doc.Concat(Doc.Text("a"), Doc.Line, inner));
 
@@ -276,7 +309,8 @@ public sealed class DocPrinterTests
     {
         var doc = Doc.Indent(
             Doc.HardLine,
-            Doc.Verbatim(["<x>", "  <y/>", "</x>"], VerbatimMode.Preserve));
+            Doc.Verbatim(["<x>", "  <y/>", "</x>"], VerbatimMode.Preserve)
+        );
 
         Assert.Equal("\n    <x>\n      <y/>\n    </x>", Print(doc));
     }
@@ -290,7 +324,8 @@ public sealed class DocPrinterTests
     {
         var doc = Doc.Indent(
             Doc.HardLine,
-            Doc.Verbatim(["#If DEBUG Then", "  whatever", "#End If"], VerbatimMode.Raw));
+            Doc.Verbatim(["#If DEBUG Then", "  whatever", "#End If"], VerbatimMode.Raw)
+        );
 
         Assert.Equal("\n#If DEBUG Then\n  whatever\n#End If", Print(doc));
     }
@@ -299,11 +334,14 @@ public sealed class DocPrinterTests
     [Fact]
     public void ForcesTheOuterGroupThroughAMultiLineRegion()
     {
-        var doc = Doc.Group(Doc.Concat(
-            Doc.Text("Foo("),
-            Doc.SoftLine,
-            Doc.Verbatim(["a", "b"], VerbatimMode.Preserve),
-            Doc.Text(")")));
+        var doc = Doc.Group(
+            Doc.Concat(
+                Doc.Text("Foo("),
+                Doc.SoftLine,
+                Doc.Verbatim(["a", "b"], VerbatimMode.Preserve),
+                Doc.Text(")")
+            )
+        );
 
         Assert.Equal("Foo(\na\nb)", Print(doc));
     }
@@ -311,8 +349,8 @@ public sealed class DocPrinterTests
     [Fact]
     public void BreaksAsSoonAsTheLimitIsPassed()
     {
-        static Doc Row(int width) => Doc.Group(Doc.Concat(
-            Doc.Text(new string('a', width - 4)), Doc.Line, Doc.Text("bbb")));
+        static Doc Row(int width) =>
+            Doc.Group(Doc.Concat(Doc.Text(new string('a', width - 4)), Doc.Line, Doc.Text("bbb")));
 
         Assert.DoesNotContain('\n', Print(Row(80)));
         Assert.Contains('\n', Print(Row(81)));
@@ -341,7 +379,8 @@ public sealed class DocPrinterTests
     {
         var printed = DocPrinter.Print(
             Doc.Group(Doc.Concat(Doc.Text("a"), Doc.SoftLine, Doc.Text("b"))),
-            Options(maxLineLength: 1));
+            Options(maxLineLength: 1)
+        );
 
         Assert.Equal("a\nb", printed);
     }

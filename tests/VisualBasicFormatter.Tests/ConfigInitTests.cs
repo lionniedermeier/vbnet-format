@@ -9,7 +9,10 @@ public sealed class ConfigInitTests : IDisposable
     private const int ExitError = 2;
 
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "vbnet-format-tests", Guid.NewGuid().ToString("n"));
+        Path.GetTempPath(),
+        "vbnet-format-tests",
+        Guid.NewGuid().ToString("n")
+    );
 
     private string ConfigPath => Path.Combine(_root, ".vbnet-format.json");
 

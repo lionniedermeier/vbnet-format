@@ -179,7 +179,8 @@ internal static class TriviaPrinter
     /// </summary>
     private static Doc DocumentationComment(SyntaxTrivia trivia)
     {
-        var lines = VerbatimFormatter.SplitLines(trivia.ToFullString())
+        var lines = VerbatimFormatter
+            .SplitLines(trivia.ToFullString())
             .Select(l => l.TrimStart().TrimEnd())
             .Where(l => l.Length > 0)
             .Select(Doc.Text);

@@ -16,9 +16,11 @@ internal static class BinaryExpressionRule
     /// <summary>Whether <paramref name="node"/> starts a run rather than continuing one.</summary>
     public static bool IsRunHead(BinaryExpressionSyntax node) =>
         ContinuationPoints.IsBreakableOperator(node.OperatorToken)
-        && !(node.Parent is BinaryExpressionSyntax parent
+        && !(
+            node.Parent is BinaryExpressionSyntax parent
             && parent.Left == node
-            && parent.OperatorToken.IsKind(node.OperatorToken.Kind()));
+            && parent.OperatorToken.IsKind(node.OperatorToken.Kind())
+        );
 
     /// <summary>
     /// Prints the run headed by <paramref name="node"/>: head, then operator and operand.
@@ -30,7 +32,11 @@ internal static class BinaryExpressionRule
     /// <see cref="VbDocBuilder.Run(ImmutableArray{Doc}, bool)"/>.
     /// </remarks>
     public static Doc Format(
-        BinaryExpressionSyntax node, VbDocVisitor visitor, FormatContext context, bool isNested = false)
+        BinaryExpressionSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context,
+        bool isNested = false
+    )
     {
         var operators = new List<SyntaxToken>();
         var operands = new List<ExpressionSyntax>();
@@ -41,8 +47,10 @@ internal static class BinaryExpressionRule
             operators.Add(current.OperatorToken);
             operands.Add(current.Right);
 
-            if (current.Left is BinaryExpressionSyntax left
-                && left.OperatorToken.IsKind(node.OperatorToken.Kind()))
+            if (
+                current.Left is BinaryExpressionSyntax left
+                && left.OperatorToken.IsKind(node.OperatorToken.Kind())
+            )
             {
                 current = left;
                 continue;
@@ -55,7 +63,8 @@ internal static class BinaryExpressionRule
         operators.Reverse();
         operands.Reverse();
 
-        var preserved = node.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
+        var preserved =
+            node.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
             && operators.Any(context.EndsItsLine);
 
         // Content and separator in turn: an operand carries the operator that follows it, and the
@@ -71,7 +80,12 @@ internal static class BinaryExpressionRule
             }
 
             items.Add(
-                Doc.Concat(FormatOperand(operands[i], visitor, context), Doc.Space, context.Token(operators[i])));
+                Doc.Concat(
+                    FormatOperand(operands[i], visitor, context),
+                    Doc.Space,
+                    context.Token(operators[i])
+                )
+            );
             items.Add(Separator(operators[i], preserved, context));
         }
 
@@ -94,7 +108,11 @@ internal static class BinaryExpressionRule
     /// going through <see cref="VbDocVisitor.VisitBinaryExpression"/> would produce a fresh,
     /// un-nested call and so a second, additive indent.
     /// </summary>
-    private static Doc FormatOperand(ExpressionSyntax operand, VbDocVisitor visitor, FormatContext context) =>
+    private static Doc FormatOperand(
+        ExpressionSyntax operand,
+        VbDocVisitor visitor,
+        FormatContext context
+    ) =>
         operand is BinaryExpressionSyntax binary && IsRunHead(binary)
             ? Format(binary, visitor, context, isNested: true)
             : visitor.Format(operand);

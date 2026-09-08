@@ -16,10 +16,18 @@ internal static class BlockRule
         IEnumerable<SyntaxNode> body,
         SyntaxNode? footer,
         VbDocVisitor visitor,
-        FormatContext context) =>
-        Doc.Concat(header, Body(body, visitor, context), StatementListRule.Format(footer, visitor, context));
+        FormatContext context
+    ) =>
+        Doc.Concat(
+            header,
+            Body(body, visitor, context),
+            StatementListRule.Format(footer, visitor, context)
+        );
 
     /// <summary>The body of a block, one level deeper than its header.</summary>
-    public static Doc Body(IEnumerable<SyntaxNode> body, VbDocVisitor visitor, FormatContext context) =>
-        Doc.Indent(StatementListRule.Format(body, visitor, context));
+    public static Doc Body(
+        IEnumerable<SyntaxNode> body,
+        VbDocVisitor visitor,
+        FormatContext context
+    ) => Doc.Indent(StatementListRule.Format(body, visitor, context));
 }

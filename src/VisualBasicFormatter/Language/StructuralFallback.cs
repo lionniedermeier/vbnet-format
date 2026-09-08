@@ -32,9 +32,9 @@ internal static class StructuralFallback
         for (var i = 0; i < children.Count; i++)
         {
             var child = children[i];
-            parts.Add(child.IsNode
-                ? visitor.Format(child.AsNode())
-                : context.Token(child.AsToken()));
+            parts.Add(
+                child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken())
+            );
 
             if (i + 1 < children.Count)
             {
@@ -43,8 +43,10 @@ internal static class StructuralFallback
                 // Whatever stood between the two -- a space, a line break, an underscore
                 // continuation -- collapses; the breaks are re-decided from scratch. An attribute
                 // list is the one boundary that ends its line rather than merely separating.
-                parts.Add(AttributePlacementRule.Break(child, next, context)
-                    ?? context.Gap(next.SpanStart > child.Span.End));
+                parts.Add(
+                    AttributePlacementRule.Break(child, next, context)
+                        ?? context.Gap(next.SpanStart > child.Span.End)
+                );
             }
         }
 
@@ -55,7 +57,8 @@ internal static class StructuralFallback
     public static Doc Run(
         IEnumerable<SyntaxNodeOrToken> children,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context
+    )
     {
         var parts = ImmutableArray.CreateBuilder<Doc>();
         SyntaxNodeOrToken? previous = null;
@@ -67,7 +70,9 @@ internal static class StructuralFallback
                 parts.Add(context.Gap(child.SpanStart > behind.Span.End));
             }
 
-            parts.Add(child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken()));
+            parts.Add(
+                child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken())
+            );
             previous = child;
         }
 

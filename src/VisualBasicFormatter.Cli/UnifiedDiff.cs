@@ -20,8 +20,14 @@ internal static class UnifiedDiff
         foreach (var hunk in Hunks(lcs))
         {
             builder
-                .Append("@@ -").Append(hunk.StartA + 1).Append(',').Append(hunk.CountA)
-                .Append(" +").Append(hunk.StartB + 1).Append(',').Append(hunk.CountB)
+                .Append("@@ -")
+                .Append(hunk.StartA + 1)
+                .Append(',')
+                .Append(hunk.CountA)
+                .Append(" +")
+                .Append(hunk.StartB + 1)
+                .Append(',')
+                .Append(hunk.CountB)
                 .AppendLine(" @@");
 
             foreach (var (marker, line) in lcs.GetRange(hunk.From, hunk.To - hunk.From))
@@ -41,14 +47,16 @@ internal static class UnifiedDiff
         {
             for (var j = b.Length - 1; j >= 0; j--)
             {
-                lengths[i, j] = a[i] == b[j]
-                    ? lengths[i + 1, j + 1] + 1
-                    : Math.Max(lengths[i + 1, j], lengths[i, j + 1]);
+                lengths[i, j] =
+                    a[i] == b[j]
+                        ? lengths[i + 1, j + 1] + 1
+                        : Math.Max(lengths[i + 1, j], lengths[i, j + 1]);
             }
         }
 
         var result = new List<(char, string)>();
-        int x = 0, y = 0;
+        int x = 0,
+            y = 0;
         while (x < a.Length && y < b.Length)
         {
             if (a[x] == b[y])
@@ -168,7 +176,8 @@ internal static class UnifiedDiff
         int from,
         int lineA,
         int lineB,
-        int index)
+        int index
+    )
     {
         for (var i = index - 1; i >= from; i--)
         {
@@ -186,5 +195,12 @@ internal static class UnifiedDiff
         return (lineA, lineB);
     }
 
-    private readonly record struct Hunk(int From, int To, int StartA, int StartB, int CountA, int CountB);
+    private readonly record struct Hunk(
+        int From,
+        int To,
+        int StartA,
+        int StartB,
+        int CountA,
+        int CountB
+    );
 }

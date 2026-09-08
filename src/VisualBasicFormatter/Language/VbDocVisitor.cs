@@ -23,7 +23,8 @@ internal sealed partial class VbDocVisitor : VisualBasicSyntaxVisitor<Doc>
     public VbDocVisitor(FormatContext context) => _context = context;
 
     /// <summary>Every node kind without a rule of its own prints its children, and offers no break.</summary>
-    public override Doc DefaultVisit(SyntaxNode node) => StructuralFallback.Format(node, this, _context);
+    public override Doc DefaultVisit(SyntaxNode node) =>
+        StructuralFallback.Format(node, this, _context);
 
     /// <summary>Formats <paramref name="node"/>, treating an absent child as nothing.</summary>
     public Doc Format(SyntaxNode? node)
@@ -61,13 +62,15 @@ internal sealed partial class VbDocVisitor : VisualBasicSyntaxVisitor<Doc>
     public override Doc VisitXmlCDataSection(XmlCDataSectionSyntax node) => Verbatim(node);
 
     /// <inheritdoc/>
-    public override Doc VisitInterpolatedStringExpression(InterpolatedStringExpressionSyntax node) =>
-        Verbatim(node);
+    public override Doc VisitInterpolatedStringExpression(
+        InterpolatedStringExpressionSyntax node
+    ) => Verbatim(node);
 
     /// <summary>
     /// A break anywhere inside re-parses as a multi-line <c>If</c> block, which is a different tree.
     /// </summary>
-    public override Doc VisitSingleLineIfStatement(SingleLineIfStatementSyntax node) => Verbatim(node);
+    public override Doc VisitSingleLineIfStatement(SingleLineIfStatementSyntax node) =>
+        Verbatim(node);
 
     private Doc Verbatim(SyntaxNode node) => VerbatimFormatter.Format(node, _context);
 }

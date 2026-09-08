@@ -10,25 +10,30 @@ internal static class XmlAssignmentRule
         SyntaxToken op,
         ExpressionSyntax? value,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context
+    )
     {
-        if (value is null
+        if (
+            value is null
             || !IsLayoutLiteral(value)
             || !ContinuationPoints.IsImplicitAfter(op)
-            || StructuralFallback.MustPrintVerbatim(value))
+            || StructuralFallback.MustPrintVerbatim(value)
+        )
         {
             return null;
         }
 
         return Doc.Group(
             context.Token(op),
-            Doc.Indent(context.BreakAfter(op), visitor.Format(value)));
+            Doc.Indent(context.BreakAfter(op), visitor.Format(value))
+        );
     }
 
-    private static bool IsLayoutLiteral(ExpressionSyntax value) => value switch
-    {
-        XmlElementSyntax element => XmlWhitespace.IsFormattable(element),
-        XmlEmptyElementSyntax => true,
-        _ => false,
-    };
+    private static bool IsLayoutLiteral(ExpressionSyntax value) =>
+        value switch
+        {
+            XmlElementSyntax element => XmlWhitespace.IsFormattable(element),
+            XmlEmptyElementSyntax => true,
+            _ => false,
+        };
 }

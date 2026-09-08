@@ -18,14 +18,22 @@ internal sealed partial class VbDocVisitor
         CompilationUnitRule.Format(node, this, _context);
 
     /// <inheritdoc/>
-    public override Doc VisitNamespaceBlock(NamespaceBlockSyntax node) => BlockRule.Format(
-        Format(node.NamespaceStatement), node.Members, node.EndNamespaceStatement, this, _context);
+    public override Doc VisitNamespaceBlock(NamespaceBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.NamespaceStatement),
+            node.Members,
+            node.EndNamespaceStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitModuleBlock(ModuleBlockSyntax node) => TypeBlockRule.Format(node, this, _context);
+    public override Doc VisitModuleBlock(ModuleBlockSyntax node) =>
+        TypeBlockRule.Format(node, this, _context);
 
     /// <inheritdoc/>
-    public override Doc VisitClassBlock(ClassBlockSyntax node) => TypeBlockRule.Format(node, this, _context);
+    public override Doc VisitClassBlock(ClassBlockSyntax node) =>
+        TypeBlockRule.Format(node, this, _context);
 
     /// <inheritdoc/>
     public override Doc VisitStructureBlock(StructureBlockSyntax node) =>
@@ -36,14 +44,21 @@ internal sealed partial class VbDocVisitor
         TypeBlockRule.Format(node, this, _context);
 
     /// <inheritdoc/>
-    public override Doc VisitEnumBlock(EnumBlockSyntax node) => BlockRule.Format(
-        Format(node.EnumStatement), node.Members, node.EndEnumStatement, this, _context);
+    public override Doc VisitEnumBlock(EnumBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.EnumStatement),
+            node.Members,
+            node.EndEnumStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
     public override Doc VisitMethodBlock(MethodBlockSyntax node) => FormatMethodBlock(node);
 
     /// <inheritdoc/>
-    public override Doc VisitConstructorBlock(ConstructorBlockSyntax node) => FormatMethodBlock(node);
+    public override Doc VisitConstructorBlock(ConstructorBlockSyntax node) =>
+        FormatMethodBlock(node);
 
     /// <inheritdoc/>
     public override Doc VisitOperatorBlock(OperatorBlockSyntax node) => FormatMethodBlock(node);
@@ -52,28 +67,42 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitAccessorBlock(AccessorBlockSyntax node) => FormatMethodBlock(node);
 
     /// <inheritdoc/>
-    public override Doc VisitPropertyBlock(PropertyBlockSyntax node) => BlockRule.Format(
-        Format(node.PropertyStatement), node.Accessors, node.EndPropertyStatement, this, _context);
+    public override Doc VisitPropertyBlock(PropertyBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.PropertyStatement),
+            node.Accessors,
+            node.EndPropertyStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitEventBlock(EventBlockSyntax node) => BlockRule.Format(
-        Format(node.EventStatement), node.Accessors, node.EndEventStatement, this, _context);
+    public override Doc VisitEventBlock(EventBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.EventStatement),
+            node.Accessors,
+            node.EndEventStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitMultiLineIfBlock(MultiLineIfBlockSyntax node) => Doc.Concat(
-        Format(node.IfStatement),
-        BlockRule.Body(node.Statements, this, _context),
-        StatementListRule.Format(node.ElseIfBlocks, this, _context),
-        StatementListRule.Format(node.ElseBlock, this, _context),
-        StatementListRule.Format(node.EndIfStatement, this, _context));
+    public override Doc VisitMultiLineIfBlock(MultiLineIfBlockSyntax node) =>
+        Doc.Concat(
+            Format(node.IfStatement),
+            BlockRule.Body(node.Statements, this, _context),
+            StatementListRule.Format(node.ElseIfBlocks, this, _context),
+            StatementListRule.Format(node.ElseBlock, this, _context),
+            StatementListRule.Format(node.EndIfStatement, this, _context)
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitElseIfBlock(ElseIfBlockSyntax node) => Doc.Concat(
-        Format(node.ElseIfStatement), BlockRule.Body(node.Statements, this, _context));
+    public override Doc VisitElseIfBlock(ElseIfBlockSyntax node) =>
+        Doc.Concat(Format(node.ElseIfStatement), BlockRule.Body(node.Statements, this, _context));
 
     /// <inheritdoc/>
-    public override Doc VisitElseBlock(ElseBlockSyntax node) => Doc.Concat(
-        Format(node.ElseStatement), BlockRule.Body(node.Statements, this, _context));
+    public override Doc VisitElseBlock(ElseBlockSyntax node) =>
+        Doc.Concat(Format(node.ElseStatement), BlockRule.Body(node.Statements, this, _context));
 
     /// <inheritdoc/>
     public override Doc VisitForBlock(ForBlockSyntax node) => FormatForBlock(node);
@@ -82,61 +111,118 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitForEachBlock(ForEachBlockSyntax node) => FormatForBlock(node);
 
     /// <inheritdoc/>
-    public override Doc VisitWhileBlock(WhileBlockSyntax node) => BlockRule.Format(
-        Format(node.WhileStatement), node.Statements, node.EndWhileStatement, this, _context);
+    public override Doc VisitWhileBlock(WhileBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.WhileStatement),
+            node.Statements,
+            node.EndWhileStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitDoLoopBlock(DoLoopBlockSyntax node) => BlockRule.Format(
-        Format(node.DoStatement), node.Statements, node.LoopStatement, this, _context);
+    public override Doc VisitDoLoopBlock(DoLoopBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.DoStatement),
+            node.Statements,
+            node.LoopStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitTryBlock(TryBlockSyntax node) => Doc.Concat(
-        Format(node.TryStatement),
-        BlockRule.Body(node.Statements, this, _context),
-        StatementListRule.Format(node.CatchBlocks, this, _context),
-        StatementListRule.Format(node.FinallyBlock, this, _context),
-        StatementListRule.Format(node.EndTryStatement, this, _context));
+    public override Doc VisitTryBlock(TryBlockSyntax node) =>
+        Doc.Concat(
+            Format(node.TryStatement),
+            BlockRule.Body(node.Statements, this, _context),
+            StatementListRule.Format(node.CatchBlocks, this, _context),
+            StatementListRule.Format(node.FinallyBlock, this, _context),
+            StatementListRule.Format(node.EndTryStatement, this, _context)
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitCatchBlock(CatchBlockSyntax node) => Doc.Concat(
-        Format(node.CatchStatement), BlockRule.Body(node.Statements, this, _context));
+    public override Doc VisitCatchBlock(CatchBlockSyntax node) =>
+        Doc.Concat(Format(node.CatchStatement), BlockRule.Body(node.Statements, this, _context));
 
     /// <inheritdoc/>
-    public override Doc VisitFinallyBlock(FinallyBlockSyntax node) => Doc.Concat(
-        Format(node.FinallyStatement), BlockRule.Body(node.Statements, this, _context));
+    public override Doc VisitFinallyBlock(FinallyBlockSyntax node) =>
+        Doc.Concat(Format(node.FinallyStatement), BlockRule.Body(node.Statements, this, _context));
 
     /// <inheritdoc/>
-    public override Doc VisitUsingBlock(UsingBlockSyntax node) => BlockRule.Format(
-        Format(node.UsingStatement), node.Statements, node.EndUsingStatement, this, _context);
+    public override Doc VisitUsingBlock(UsingBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.UsingStatement),
+            node.Statements,
+            node.EndUsingStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitWithBlock(WithBlockSyntax node) => BlockRule.Format(
-        Format(node.WithStatement), node.Statements, node.EndWithStatement, this, _context);
+    public override Doc VisitWithBlock(WithBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.WithStatement),
+            node.Statements,
+            node.EndWithStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitSyncLockBlock(SyncLockBlockSyntax node) => BlockRule.Format(
-        Format(node.SyncLockStatement), node.Statements, node.EndSyncLockStatement, this, _context);
+    public override Doc VisitSyncLockBlock(SyncLockBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.SyncLockStatement),
+            node.Statements,
+            node.EndSyncLockStatement,
+            this,
+            _context
+        );
 
     /// <summary>A <c>Select</c> has no statements of its own; its case blocks are the body.</summary>
-    public override Doc VisitSelectBlock(SelectBlockSyntax node) => BlockRule.Format(
-        Format(node.SelectStatement), node.CaseBlocks, node.EndSelectStatement, this, _context);
+    public override Doc VisitSelectBlock(SelectBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.SelectStatement),
+            node.CaseBlocks,
+            node.EndSelectStatement,
+            this,
+            _context
+        );
 
     /// <inheritdoc/>
-    public override Doc VisitCaseBlock(CaseBlockSyntax node) => Doc.Concat(
-        Format(node.CaseStatement), BlockRule.Body(node.Statements, this, _context));
+    public override Doc VisitCaseBlock(CaseBlockSyntax node) =>
+        Doc.Concat(Format(node.CaseStatement), BlockRule.Body(node.Statements, this, _context));
 
     /// <summary>
     /// A lambda starts wherever the expression around it happens to end, so its body and its
     /// <c>End Function</c> hang off that column rather than off the enclosing statement's indent.
     /// </summary>
-    public override Doc VisitMultiLineLambdaExpression(MultiLineLambdaExpressionSyntax node) => Doc.Align(
-        BlockRule.Format(
-            Format(node.SubOrFunctionHeader), node.Statements, node.EndSubOrFunctionStatement, this, _context));
+    public override Doc VisitMultiLineLambdaExpression(MultiLineLambdaExpressionSyntax node) =>
+        Doc.Align(
+            BlockRule.Format(
+                Format(node.SubOrFunctionHeader),
+                node.Statements,
+                node.EndSubOrFunctionStatement,
+                this,
+                _context
+            )
+        );
 
     /// <summary><c>Sub</c>, <c>Function</c>, <c>New</c>, <c>Operator</c> and property accessors.</summary>
-    private Doc FormatMethodBlock(MethodBlockBaseSyntax node) => BlockRule.Format(
-        Format(node.BlockStatement), node.Statements, node.EndBlockStatement, this, _context);
+    private Doc FormatMethodBlock(MethodBlockBaseSyntax node) =>
+        BlockRule.Format(
+            Format(node.BlockStatement),
+            node.Statements,
+            node.EndBlockStatement,
+            this,
+            _context
+        );
 
-    private Doc FormatForBlock(ForOrForEachBlockSyntax node) => BlockRule.Format(
-        Format(node.ForOrForEachStatement), node.Statements, node.NextStatement, this, _context);
+    private Doc FormatForBlock(ForOrForEachBlockSyntax node) =>
+        BlockRule.Format(
+            Format(node.ForOrForEachStatement),
+            node.Statements,
+            node.NextStatement,
+            this,
+            _context
+        );
 }

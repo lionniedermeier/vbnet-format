@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <RootNamespace>VisualBasicFormatter</RootNamespace>
     <Description>A VB.NET source formatter that wraps long lines and long method signatures.</Description>
@@ -19,5 +18,4 @@
     <!-- The IR, the printer and the per-node rules are internal; the tests exercise them directly. -->
     <InternalsVisibleTo Include="VisualBasicFormatter.Tests" />
   </ItemGroup>
-
 </Project>

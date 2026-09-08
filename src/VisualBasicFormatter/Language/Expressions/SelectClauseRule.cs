@@ -16,6 +16,8 @@ internal static class SelectClauseRule
             context.Token(node.SelectKeyword),
             Doc.Indent(
                 context.BreakAfterQueryOperator(node.SelectKeyword),
-                StructuralFallback.Run(node.ChildNodesAndTokens().Skip(1), visitor, context)));
+                StructuralFallback.Run(node.ChildNodesAndTokens().Skip(1), visitor, context)
+            )
+        );
     }
 }

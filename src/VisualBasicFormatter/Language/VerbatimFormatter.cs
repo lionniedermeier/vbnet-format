@@ -19,10 +19,12 @@ internal static class VerbatimFormatter
     /// its own extent -- the trivia on its outer tokens too -- so a rule that prints its children and
     /// its own tokens covers everything once and only once.
     /// </summary>
-    public static Doc Format(SyntaxNode node, FormatContext context) => Doc.Concat(
-        TriviaPrinter.Leading(node.GetFirstToken(), context),
-        Body(node, context),
-        TriviaPrinter.Trailing(node.GetLastToken(), context));
+    public static Doc Format(SyntaxNode node, FormatContext context) =>
+        Doc.Concat(
+            TriviaPrinter.Leading(node.GetFirstToken(), context),
+            Body(node, context),
+            TriviaPrinter.Trailing(node.GetLastToken(), context)
+        );
 
     private static Doc Body(SyntaxNode node, FormatContext context)
     {
@@ -48,7 +50,10 @@ internal static class VerbatimFormatter
             return Doc.Verbatim(lines, VerbatimMode.Anchored);
         }
 
-        return Doc.Verbatim(Dedent(lines, BaseIndentWidth(node, context), context), VerbatimMode.Preserve);
+        return Doc.Verbatim(
+            Dedent(lines, BaseIndentWidth(node, context), context),
+            VerbatimMode.Preserve
+        );
     }
 
     /// <summary>
@@ -56,13 +61,17 @@ internal static class VerbatimFormatter
     /// whitespace at the start of such a line is a character of the document, not indentation --
     /// see <see cref="Xml.XmlWhitespace"/> for where XML draws that line.
     /// </summary>
-    private static bool OwnsItsColumns(SyntaxNode node) => node.DescendantTokens().Any(token =>
-        token.Text.Contains('\n')
-        && token.Parent is XmlTextSyntax
-            or XmlStringSyntax
-            or XmlCDataSectionSyntax
-            or XmlCommentSyntax
-            or XmlProcessingInstructionSyntax);
+    private static bool OwnsItsColumns(SyntaxNode node) =>
+        node.DescendantTokens()
+            .Any(token =>
+                token.Text.Contains('\n')
+                && token.Parent
+                    is XmlTextSyntax
+                        or XmlStringSyntax
+                        or XmlCDataSectionSyntax
+                        or XmlCommentSyntax
+                        or XmlProcessingInstructionSyntax
+            );
 
     /// <summary>Prints <paramref name="text"/> with its original columns. For disabled <c>#If</c> text.</summary>
     public static Doc Raw(string text) => Doc.Verbatim(SplitLines(text), VerbatimMode.Raw);
@@ -107,19 +116,25 @@ internal static class VerbatimFormatter
 
         foreach (var descendant in node.DescendantNodesAndSelf())
         {
-            if (descendant is StatementSyntax
-                or XmlNodeSyntax
-                or InterpolatedStringExpressionSyntax
-                or MultiLineLambdaExpressionSyntax)
+            if (
+                descendant
+                is StatementSyntax
+                    or XmlNodeSyntax
+                    or InterpolatedStringExpressionSyntax
+                    or MultiLineLambdaExpressionSyntax
+            )
             {
                 return false;
             }
         }
 
-        return !node.DescendantTrivia().Any(t => t.IsDirective
-            || t.IsKind(SyntaxKind.CommentTrivia)
-            || t.IsKind(SyntaxKind.DocumentationCommentTrivia)
-            || t.IsKind(SyntaxKind.DisabledTextTrivia));
+        return !node.DescendantTrivia()
+            .Any(t =>
+                t.IsDirective
+                || t.IsKind(SyntaxKind.CommentTrivia)
+                || t.IsKind(SyntaxKind.DocumentationCommentTrivia)
+                || t.IsKind(SyntaxKind.DisabledTextTrivia)
+            );
     }
 
     private static string Collapse(ImmutableArray<string> lines)
@@ -175,7 +190,8 @@ internal static class VerbatimFormatter
     private static ImmutableArray<string> Dedent(
         ImmutableArray<string> lines,
         int baseWidth,
-        FormatContext context)
+        FormatContext context
+    )
     {
         var dedented = ImmutableArray.CreateBuilder<string>(lines.Length);
         dedented.Add(lines[0]);

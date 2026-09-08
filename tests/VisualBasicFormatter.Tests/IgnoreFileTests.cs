@@ -5,7 +5,10 @@ namespace VisualBasicFormatter.Tests;
 public sealed class IgnoreFileTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "vbnet-format-tests", Guid.NewGuid().ToString("n"));
+        Path.GetTempPath(),
+        "vbnet-format-tests",
+        Guid.NewGuid().ToString("n")
+    );
 
     public IgnoreFileTests() => Directory.CreateDirectory(_root);
 
@@ -221,7 +224,11 @@ public sealed class IgnoreFileTests : IDisposable
         Write("custom.txt", "*.bak.vb");
 
         var ignores = Program.DiscoverIgnores(
-            _root, [Path.Combine(_root, "custom.txt")], respectGitignore: true, noIgnore: false);
+            _root,
+            [Path.Combine(_root, "custom.txt")],
+            respectGitignore: true,
+            noIgnore: false
+        );
 
         Assert.True(ignores.IsIgnored(Path.Combine(_root, "x.bak.vb")));
         Assert.False(ignores.IsIgnored(Path.Combine(_root, "keep.vb")));
@@ -238,7 +245,8 @@ public sealed class IgnoreFileTests : IDisposable
             _root,
             [Path.Combine(_root, "first.txt"), Path.Combine(_root, "second.txt")],
             respectGitignore: true,
-            noIgnore: false);
+            noIgnore: false
+        );
 
         Assert.False(ignores.IsIgnored(Path.Combine(_root, "keep.vb")));
         Assert.True(ignores.IsIgnored(Path.Combine(_root, "other.vb")));
@@ -255,8 +263,14 @@ public sealed class IgnoreFileTests : IDisposable
     [Fact]
     public void FailsOnAMissingIgnorePath()
     {
-        Assert.Throws<InvalidDataException>(() => Program.DiscoverIgnores(
-            _root, [Path.Combine(_root, "absent.txt")], respectGitignore: true, noIgnore: false));
+        Assert.Throws<InvalidDataException>(() =>
+            Program.DiscoverIgnores(
+                _root,
+                [Path.Combine(_root, "absent.txt")],
+                respectGitignore: true,
+                noIgnore: false
+            )
+        );
     }
 
     private void Write(string name, string contents) =>
@@ -269,6 +283,10 @@ public sealed class IgnoreFileTests : IDisposable
         Match(relativePath, true, lines) is true;
 
     private bool? Match(string relativePath, bool isDirectory, string[] lines) =>
-        IgnoreFile.Parse(_root, lines).Match(
-            Path.Combine(_root, relativePath.Replace('/', Path.DirectorySeparatorChar)), isDirectory);
+        IgnoreFile
+            .Parse(_root, lines)
+            .Match(
+                Path.Combine(_root, relativePath.Replace('/', Path.DirectorySeparatorChar)),
+                isDirectory
+            );
 }

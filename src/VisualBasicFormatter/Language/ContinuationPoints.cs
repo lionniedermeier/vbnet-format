@@ -60,7 +60,9 @@ internal static class ContinuationPoints
             SyntaxKind.OpenParenToken => true,
             SyntaxKind.OpenBraceToken => true,
             SyntaxKind.DotToken => IsBreakableDot(token),
-            SyntaxKind.EqualsToken => token.Parent is EqualsValueSyntax or AssignmentStatementSyntax,
+            SyntaxKind.EqualsToken => token.Parent
+                is EqualsValueSyntax
+                    or AssignmentStatementSyntax,
 
             // Legal, but it only puts the bracket alone on a line; the commas inside do the work.
             // Answered here rather than left out, because the comparison < is in Operators below.
@@ -126,11 +128,12 @@ internal static class ContinuationPoints
     /// the places where VB does demand an underscore. Breaking inside a qualified name is legal but
     /// splits a type across lines for no gain, so it is refused too.
     /// </summary>
-    private static bool IsBreakableDot(SyntaxToken token) => token.Parent switch
-    {
-        MemberAccessExpressionSyntax access => access.Expression is not null,
-        _ => false,
-    };
+    private static bool IsBreakableDot(SyntaxToken token) =>
+        token.Parent switch
+        {
+            MemberAccessExpressionSyntax access => access.Expression is not null,
+            _ => false,
+        };
 
     /// <summary>
     /// Whether <paramref name="token"/> opens a query clause: the <c>From</c>, <c>Where</c>,
@@ -174,10 +177,13 @@ internal static class ContinuationPoints
                 return false;
             }
 
-            if (node is InterpolatedStringExpressionSyntax
-                or XmlNodeSyntax
-                or DirectiveTriviaSyntax
-                or SingleLineIfStatementSyntax)
+            if (
+                node
+                is InterpolatedStringExpressionSyntax
+                    or XmlNodeSyntax
+                    or DirectiveTriviaSyntax
+                    or SingleLineIfStatementSyntax
+            )
             {
                 return true;
             }

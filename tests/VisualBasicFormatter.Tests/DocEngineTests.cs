@@ -26,12 +26,17 @@ public sealed class DocEngineTests
     }
 
     /// <summary>Parses and runs the spacing pre-pass, i.e. everything the engine sits behind.</summary>
-    private static (CompilationUnitSyntax Root, FormatterOptions Options, string NewLine) Normalize(string source)
+    private static (CompilationUnitSyntax Root, FormatterOptions Options, string NewLine) Normalize(
+        string source
+    )
     {
         var options = new FormatterOptions();
         var newLine = VbFormatter.DetectNewLine(source);
 
-        var tree = VisualBasicSyntaxTree.ParseText(source, new VisualBasicParseOptions(options.LanguageVersion));
+        var tree = VisualBasicSyntaxTree.ParseText(
+            source,
+            new VisualBasicParseOptions(options.LanguageVersion)
+        );
         var root = (CompilationUnitSyntax)tree.GetRoot();
 
         return (VbFormatter.NormalizeWhitespace(root, options, newLine), options, newLine);

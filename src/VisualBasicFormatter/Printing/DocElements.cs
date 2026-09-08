@@ -7,9 +7,7 @@ internal sealed class DocNothing : Doc
 {
     internal static readonly DocNothing Instance = new();
 
-    private DocNothing()
-    {
-    }
+    private DocNothing() { }
 
     internal override bool Expands => false;
 }
@@ -187,9 +185,7 @@ internal sealed class DocExpandParent : Doc
 {
     internal static readonly DocExpandParent Instance = new();
 
-    private DocExpandParent()
-    {
-    }
+    private DocExpandParent() { }
 
     internal override bool Expands => true;
 }

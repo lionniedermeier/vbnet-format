@@ -67,21 +67,35 @@ internal sealed class DocPrinter
                 break;
 
             case DocIndent indent:
-                _commands.Push(command with
-                {
-                    Indent = command.Indent.Increase(_options),
-                    Doc = indent.Content,
-                });
+                _commands.Push(
+                    command with
+                    {
+                        Indent = command.Indent.Increase(_options),
+                        Doc = indent.Content,
+                    }
+                );
                 break;
 
             // The align column is the column reached right here, which is what makes
             // WrapStyle.Align land flush behind the opening paren.
             case DocAlign align:
-                _commands.Push(command with { Indent = Indentation.At(_column), Doc = align.Content });
+                _commands.Push(
+                    command with
+                    {
+                        Indent = Indentation.At(_column),
+                        Doc = align.Content,
+                    }
+                );
                 break;
 
             case DocGroup group:
-                _commands.Push(command with { Mode = ModeFor(group, command), Doc = group.Content });
+                _commands.Push(
+                    command with
+                    {
+                        Mode = ModeFor(group, command),
+                        Doc = group.Content,
+                    }
+                );
                 break;
 
             case DocConditionalGroup choice:
@@ -89,10 +103,15 @@ internal sealed class DocPrinter
                 break;
 
             case DocConditional conditional:
-                _commands.Push(command with
-                {
-                    Doc = command.Mode == PrintMode.Break ? conditional.WhenBroken : conditional.WhenFlat,
-                });
+                _commands.Push(
+                    command with
+                    {
+                        Doc =
+                            command.Mode == PrintMode.Break
+                                ? conditional.WhenBroken
+                                : conditional.WhenFlat,
+                    }
+                );
                 break;
 
             case DocLineSuffix suffix:
@@ -112,7 +131,9 @@ internal sealed class DocPrinter
                 break;
 
             default:
-                throw new InvalidOperationException($"Unhandled doc element {command.Doc.GetType().Name}.");
+                throw new InvalidOperationException(
+                    $"Unhandled doc element {command.Doc.GetType().Name}."
+                );
         }
     }
 
@@ -242,11 +263,13 @@ internal sealed class DocPrinter
 
         if (parts.Length == 2)
         {
-            _commands.Push(command with
-            {
-                Mode = Fits(probe with { Doc = parts[0] }) ? PrintMode.Flat : PrintMode.Break,
-                Doc = separator,
-            });
+            _commands.Push(
+                command with
+                {
+                    Mode = Fits(probe with { Doc = parts[0] }) ? PrintMode.Flat : PrintMode.Break,
+                    Doc = separator,
+                }
+            );
             _commands.Push(content);
             return;
         }
@@ -257,11 +280,13 @@ internal sealed class DocPrinter
         // Pushed first, so processed last.
         _commands.Push(command with { Doc = Doc.Fill(parts.RemoveRange(0, 2), fill.Strict) });
 
-        _commands.Push(command with
-        {
-            Mode = pairFits ? PrintMode.Flat : PrintMode.Break,
-            Doc = separator,
-        });
+        _commands.Push(
+            command with
+            {
+                Mode = pairFits ? PrintMode.Flat : PrintMode.Break,
+                Doc = separator,
+            }
+        );
 
         _commands.Push(content);
     }
@@ -343,11 +368,13 @@ internal sealed class DocPrinter
                     break;
 
                 case DocGroup group:
-                    queue.Push(command with
-                    {
-                        Mode = ModeUnderTest(group, command, declaredBreaksOnly && !inRest),
-                        Doc = group.Content,
-                    });
+                    queue.Push(
+                        command with
+                        {
+                            Mode = ModeUnderTest(group, command, declaredBreaksOnly && !inRest),
+                            Doc = group.Content,
+                        }
+                    );
                     break;
 
                 // What it would come to under measurement: the layout it starts from.
@@ -356,10 +383,15 @@ internal sealed class DocPrinter
                     break;
 
                 case DocConditional conditional:
-                    queue.Push(command with
-                    {
-                        Doc = command.Mode == PrintMode.Break ? conditional.WhenBroken : conditional.WhenFlat,
-                    });
+                    queue.Push(
+                        command with
+                        {
+                            Doc =
+                                command.Mode == PrintMode.Break
+                                    ? conditional.WhenBroken
+                                    : conditional.WhenFlat,
+                        }
+                    );
                     break;
 
                 case DocVerbatim verbatim:
@@ -374,7 +406,10 @@ internal sealed class DocPrinter
                     break;
 
                 case DocLine line:
-                    if (command.Mode == PrintMode.Break || line.Kind is LineKind.Hard or LineKind.Empty)
+                    if (
+                        command.Mode == PrintMode.Break
+                        || line.Kind is LineKind.Hard or LineKind.Empty
+                    )
                     {
                         return true;
                     }
@@ -395,10 +430,14 @@ internal sealed class DocPrinter
     }
 
     /// <summary>The mode a nested group is measured in while <see cref="Fits"/> walks it.</summary>
-    private static PrintMode ModeUnderTest(DocGroup group, Command command, bool declaredBreaksOnly) =>
+    private static PrintMode ModeUnderTest(
+        DocGroup group,
+        Command command,
+        bool declaredBreaksOnly
+    ) =>
         group.Expands ? PrintMode.Break
-            : declaredBreaksOnly ? PrintMode.Flat
-            : command.Mode;
+        : declaredBreaksOnly ? PrintMode.Flat
+        : command.Mode;
 
     private void PushReversed(Command command, ImmutableArray<Doc> parts)
     {
@@ -459,7 +498,11 @@ internal sealed class DocPrinter
         }
 
         _output.Length = end;
-        _column = TextWidth.Measure(_output.ToString(_lineStart, end - _lineStart), 0, _options.IndentSize);
+        _column = TextWidth.Measure(
+            _output.ToString(_lineStart, end - _lineStart),
+            0,
+            _options.IndentSize
+        );
     }
 
     private readonly record struct Command(Indentation Indent, PrintMode Mode, Doc Doc);

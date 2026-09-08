@@ -57,7 +57,11 @@ internal sealed class IgnoreRule
         var core = (anchored ? "^" : "^(?:.*/)?") + Translate(text);
         var directory = new Regex(core + "(?:/.*)?$", Options);
 
-        return new IgnoreRule(directoryOnly ? new Regex(core + "/.*$", Options) : directory, directory, negated);
+        return new IgnoreRule(
+            directoryOnly ? new Regex(core + "/.*$", Options) : directory,
+            directory,
+            negated
+        );
     }
 
     private static string TrimTrailing(string text)
@@ -198,8 +202,13 @@ internal sealed class IgnoreFile
 
     public bool? Match(string fullPath, bool isDirectory)
     {
-        var relative = Path.GetRelativePath(_baseDirectory, Path.GetFullPath(fullPath)).Replace('\\', '/');
-        if (relative == ".." || relative.StartsWith("../", StringComparison.Ordinal) || Path.IsPathRooted(relative))
+        var relative = Path.GetRelativePath(_baseDirectory, Path.GetFullPath(fullPath))
+            .Replace('\\', '/');
+        if (
+            relative == ".."
+            || relative.StartsWith("../", StringComparison.Ordinal)
+            || Path.IsPathRooted(relative)
+        )
         {
             return null;
         }

@@ -11,7 +11,11 @@ namespace VisualBasicFormatter.Language.Statements;
 internal static class StatementListRule
 {
     /// <summary>Prints every node in <paramref name="nodes"/>, preceded by the break that leads to it.</summary>
-    public static Doc Format(IEnumerable<SyntaxNode> nodes, VbDocVisitor visitor, FormatContext context)
+    public static Doc Format(
+        IEnumerable<SyntaxNode> nodes,
+        VbDocVisitor visitor,
+        FormatContext context
+    )
     {
         var parts = ImmutableArray.CreateBuilder<Doc>();
 

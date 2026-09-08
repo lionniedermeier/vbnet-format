@@ -13,7 +13,8 @@ internal static class DocEngine
     public static string Format(
         CompilationUnitSyntax root,
         FormatterOptions options,
-        string newLine)
+        string newLine
+    )
     {
         var context = new FormatContext(options, root.SyntaxTree.GetText(), newLine);
         var visitor = new VbDocVisitor(context);

@@ -15,8 +15,10 @@ public static class VbFormatter
 {
     // Roslyn only applies an .editorconfig when the project and the document carry paths under the
     // same directory. These files exist in memory only.
-    private static readonly string VirtualDirectory =
-        Path.Combine(Path.GetTempPath(), "vbnet-format-inmemory");
+    private static readonly string VirtualDirectory = Path.Combine(
+        Path.GetTempPath(),
+        "vbnet-format-inmemory"
+    );
 
     /// <summary>Formats <paramref name="source"/>.</summary>
     /// <param name="source">VB.NET source text.</param>
@@ -62,7 +64,8 @@ public static class VbFormatter
     internal static CompilationUnitSyntax NormalizeWhitespace(
         CompilationUnitSyntax root,
         FormatterOptions options,
-        string newLine)
+        string newLine
+    )
     {
         var editorConfig = string.Join(
             newLine,
@@ -72,31 +75,39 @@ public static class VbFormatter
             $"indent_style = {(options.UseTabs ? "tab" : "space")}",
             $"indent_size = {options.IndentSize}",
             $"tab_width = {options.IndentSize}",
-            $"end_of_line = {(newLine == "\r\n" ? "crlf" : "lf")}");
+            $"end_of_line = {(newLine == "\r\n" ? "crlf" : "lf")}"
+        );
 
         using var workspace = new AdhocWorkspace();
 
         var project = workspace
-            .AddProject(ProjectInfo.Create(
-                ProjectId.CreateNewId(),
-                VersionStamp.Default,
-                name: "VbNetFormat",
-                assemblyName: "VbNetFormat",
-                language: LanguageNames.VisualBasic,
-                filePath: Path.Combine(VirtualDirectory, "VbNetFormat.vbproj")))
+            .AddProject(
+                ProjectInfo.Create(
+                    ProjectId.CreateNewId(),
+                    VersionStamp.Default,
+                    name: "VbNetFormat",
+                    assemblyName: "VbNetFormat",
+                    language: LanguageNames.VisualBasic,
+                    filePath: Path.Combine(VirtualDirectory, "VbNetFormat.vbproj")
+                )
+            )
             .AddAnalyzerConfigDocument(
                 ".editorconfig",
                 SourceText.From(editorConfig),
-                filePath: Path.Combine(VirtualDirectory, ".editorconfig"))
+                filePath: Path.Combine(VirtualDirectory, ".editorconfig")
+            )
             .Project;
 
         var document = project.AddDocument(
             "Source.vb",
             SourceText.From(root.ToFullString()),
-            filePath: Path.Combine(VirtualDirectory, "Source.vb"));
+            filePath: Path.Combine(VirtualDirectory, "Source.vb")
+        );
 
-        var formatted = Formatter.FormatAsync(document, options: null, CancellationToken.None)
-            .GetAwaiter().GetResult();
+        var formatted = Formatter
+            .FormatAsync(document, options: null, CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
 
         return (CompilationUnitSyntax)formatted.GetSyntaxRootAsync().GetAwaiter().GetResult()!;
     }
@@ -110,7 +121,8 @@ public static class VbFormatter
     private static Diagnostic? VerifyEquivalence(
         CompilationUnitSyntax original,
         string formatted,
-        VisualBasicParseOptions parseOptions)
+        VisualBasicParseOptions parseOptions
+    )
     {
         var tree = VisualBasicSyntaxTree.ParseText(formatted, parseOptions);
 
@@ -130,8 +142,10 @@ public static class VbFormatter
             return Failure("Formatting changed or lost imports.");
         }
 
-        if (!Body(original).IsEquivalentTo(Body(result), topLevel: false)
-            && !StructurallyIdentical(Body(original), Body(result)))
+        if (
+            !Body(original).IsEquivalentTo(Body(result), topLevel: false)
+            && !StructurallyIdentical(Body(original), Body(result))
+        )
         {
             return Failure("Formatting changed the code.");
         }
@@ -140,37 +154,47 @@ public static class VbFormatter
     }
 
     internal static bool StructurallyIdentical(SyntaxNode before, SyntaxNode after) =>
-        before.DescendantNodes().Select(n => n.RawKind)
+        before
+            .DescendantNodes()
+            .Select(n => n.RawKind)
             .SequenceEqual(after.DescendantNodes().Select(n => n.RawKind))
-        && before.DescendantTokens().Select(t => (t.RawKind, t.Text))
+        && before
+            .DescendantTokens()
+            .Select(t => (t.RawKind, t.Text))
             .SequenceEqual(after.DescendantTokens().Select(t => (t.RawKind, t.Text)));
 
     private static HashSet<string> ImportClauses(CompilationUnitSyntax root) =>
-        new(root.Imports.SelectMany(i => i.ImportsClauses).Select(c => c.ToString().Trim()),
-            StringComparer.OrdinalIgnoreCase);
+        new(
+            root.Imports.SelectMany(i => i.ImportsClauses).Select(c => c.ToString().Trim()),
+            StringComparer.OrdinalIgnoreCase
+        );
 
     /// <summary>The file without its imports, so that their order does not disturb the comparison.</summary>
     private static CompilationUnitSyntax Body(CompilationUnitSyntax root) =>
         root.WithImports(default);
 
-    private static Diagnostic Failure(string message) => Diagnostic.Create(
-        new DiagnosticDescriptor(
-            "VBNETFORMAT001",
-            "Formatting aborted",
-            "{0}",
-            "VisualBasicFormatter",
-            DiagnosticSeverity.Error,
-            isEnabledByDefault: true),
-        Location.None,
-        message);
+    private static Diagnostic Failure(string message) =>
+        Diagnostic.Create(
+            new DiagnosticDescriptor(
+                "VBNETFORMAT001",
+                "Formatting aborted",
+                "{0}",
+                "VisualBasicFormatter",
+                DiagnosticSeverity.Error,
+                isEnabledByDefault: true
+            ),
+            Location.None,
+            message
+        );
 
     /// <summary>The line ending <paramref name="endOfLine"/> asks for, resolving <c>Auto</c>.</summary>
-    private static string NewLineFor(EndOfLine endOfLine, string source) => endOfLine switch
-    {
-        EndOfLine.Lf => "\n",
-        EndOfLine.CrLf => "\r\n",
-        _ => DetectNewLine(source),
-    };
+    private static string NewLineFor(EndOfLine endOfLine, string source) =>
+        endOfLine switch
+        {
+            EndOfLine.Lf => "\n",
+            EndOfLine.CrLf => "\r\n",
+            _ => DetectNewLine(source),
+        };
 
     internal static string DetectNewLine(string source)
     {

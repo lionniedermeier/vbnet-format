@@ -11,13 +11,16 @@ internal static class ConcatAssignmentRule
         SyntaxToken op,
         ExpressionSyntax? value,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context
+    )
     {
-        if (value is not BinaryExpressionSyntax binary
+        if (
+            value is not BinaryExpressionSyntax binary
             || !binary.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
             || !BinaryExpressionRule.IsRunHead(binary)
             || !ContinuationPoints.IsImplicitAfter(op)
-            || StructuralFallback.MustPrintVerbatim(binary))
+            || StructuralFallback.MustPrintVerbatim(binary)
+        )
         {
             return null;
         }
@@ -26,6 +29,8 @@ internal static class ConcatAssignmentRule
             context.Token(op),
             Doc.Indent(
                 context.BreakAfter(op),
-                BinaryExpressionRule.Format(binary, visitor, context, isNested: true)));
+                BinaryExpressionRule.Format(binary, visitor, context, isNested: true)
+            )
+        );
     }
 }

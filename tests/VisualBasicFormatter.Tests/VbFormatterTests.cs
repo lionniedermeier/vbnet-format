@@ -84,7 +84,11 @@ public sealed class VbFormatterTests
         Assert.Equal(ImportClauses(before), ImportClauses(after));
         Assert.True(
             before.WithImports(default).IsEquivalentTo(after.WithImports(default), topLevel: false)
-            || VbFormatter.StructurallyIdentical(before.WithImports(default), after.WithImports(default)));
+                || VbFormatter.StructurallyIdentical(
+                    before.WithImports(default),
+                    after.WithImports(default)
+                )
+        );
     }
 
     [Fact]
@@ -121,7 +125,8 @@ public sealed class VbFormatterTests
                 "Imports Newtonsoft.Json",
                 "Imports IO = System.IO",
             ],
-            imports);
+            imports
+        );
     }
 
     [Fact]
@@ -163,12 +168,24 @@ public sealed class VbFormatterTests
     [InlineData(EndOfLine.CrLf, "\n", "\r\n")]
     public void WritesTheRequestedLineEnding(EndOfLine endOfLine, string input, string expected)
     {
-        var source = string.Join(input, "Module M", "", "    Sub S()", "    End Sub", "", "End Module", "");
+        var source = string.Join(
+            input,
+            "Module M",
+            "",
+            "    Sub S()",
+            "    End Sub",
+            "",
+            "End Module",
+            ""
+        );
 
         var result = VbFormatter.Format(source, new FormatterOptions { EndOfLine = endOfLine });
 
         Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
-        Assert.Equal(expected, result.Text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n");
+        Assert.Equal(
+            expected,
+            result.Text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n"
+        );
     }
 
     [Fact]
@@ -195,7 +212,8 @@ public sealed class VbFormatterTests
 
         Assert.DoesNotContain(
             result.Text.ReplaceLineEndings("\n").Split('\n'),
-            l => l.TrimEnd().EndsWith(" _", StringComparison.Ordinal));
+            l => l.TrimEnd().EndsWith(" _", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
@@ -220,7 +238,10 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("LambdaArgument"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        var open = Array.FindIndex(lines, l => l.TrimEnd().EndsWith("Any(", StringComparison.Ordinal));
+        var open = Array.FindIndex(
+            lines,
+            l => l.TrimEnd().EndsWith("Any(", StringComparison.Ordinal)
+        );
         Assert.True(open >= 0);
 
         var indent = lines[open][..(lines[open].Length - lines[open].TrimStart().Length)];
@@ -247,7 +268,10 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("LambdaArgument"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        var open = Array.FindIndex(lines, l => l.TrimEnd().EndsWith("Any(", StringComparison.Ordinal));
+        var open = Array.FindIndex(
+            lines,
+            l => l.TrimEnd().EndsWith("Any(", StringComparison.Ordinal)
+        );
         var close = Array.FindIndex(lines, l => l.Trim() == "))");
         Assert.True(open >= 0 && close >= 0);
 
@@ -279,7 +303,10 @@ public sealed class VbFormatterTests
         Assert.Contains(lines, l => l.Trim() == ")");
 
         // And at the indent of the line that opened it, not the elements'.
-        var open = Array.FindIndex(lines, l => l.TrimEnd().EndsWith("String.Format(", StringComparison.Ordinal));
+        var open = Array.FindIndex(
+            lines,
+            l => l.TrimEnd().EndsWith("String.Format(", StringComparison.Ordinal)
+        );
         var close = Array.FindIndex(lines, open, lines.Length - open, l => l.Trim() == ")");
         Assert.True(open >= 0 && close > open);
         Assert.Equal(Indent(lines[open]), Indent(lines[close]));
@@ -297,7 +324,10 @@ public sealed class VbFormatterTests
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
         Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
-        Assert.DoesNotContain(lines, l => l.TrimEnd().EndsWith("Register(Sub()", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            lines,
+            l => l.TrimEnd().EndsWith("Register(Sub()", StringComparison.Ordinal)
+        );
         Assert.Contains(lines, l => l.Trim() == "Sub()");
     }
 
@@ -320,15 +350,20 @@ public sealed class VbFormatterTests
 
             """;
 
-        var lines = VbFormatter.Format(Source.ReplaceLineEndings("\r\n"))
-            .Text.ReplaceLineEndings("\n").Split('\n');
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
 
         // Too wide to stay on the statement's line, but the arguments still fit on one indented
         // line of their own -- so they take it rather than stacking.
         Assert.Contains(
             lines,
-            l => l.Trim() == "tankIdentifierValue, currentVolumeReading, recordedTimestampUtc, "
-                + "auditTrailReference, operatorDisplayName");
+            l =>
+                l.Trim()
+                == "tankIdentifierValue, currentVolumeReading, recordedTimestampUtc, "
+                    + "auditTrailReference, operatorDisplayName"
+        );
 
         // Two more arguments and that line no longer fits either: one element per line.
         Assert.Contains(lines, l => l.Trim() == "operatorDisplayName,");
@@ -353,8 +388,10 @@ public sealed class VbFormatterTests
 
             """;
 
-        var lines = VbFormatter.Format(Source.ReplaceLineEndings("\r\n"), new FormatterOptions { MaxLineLength = 60 })
-            .Text.ReplaceLineEndings("\n").Split('\n');
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"), new FormatterOptions { MaxLineLength = 60 })
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
 
         Assert.Contains(lines, l => l.Trim() == ".Identifier = 1,");
         Assert.Contains(lines, l => l.Trim() == ".CurrentVolume = 240.5,");
@@ -368,8 +405,14 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("WithBlock"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        Assert.Contains(lines, l => l.TrimStart().StartsWith(".Diagnostics", StringComparison.Ordinal));
-        Assert.DoesNotContain(lines, l => l.TrimEnd().EndsWith("With configuration.", StringComparison.Ordinal));
+        Assert.Contains(
+            lines,
+            l => l.TrimStart().StartsWith(".Diagnostics", StringComparison.Ordinal)
+        );
+        Assert.DoesNotContain(
+            lines,
+            l => l.TrimEnd().EndsWith("With configuration.", StringComparison.Ordinal)
+        );
     }
 
     /// <summary>
@@ -412,7 +455,10 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("XmlLiteralInline"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        var head = Array.FindIndex(lines, l => l.Contains("<%= From e In _employees", StringComparison.Ordinal));
+        var head = Array.FindIndex(
+            lines,
+            l => l.Contains("<%= From e In _employees", StringComparison.Ordinal)
+        );
         Assert.True(head >= 0);
 
         var column = lines[head].IndexOf("From", StringComparison.Ordinal);
@@ -431,7 +477,10 @@ public sealed class VbFormatterTests
 
         var condition = Array.FindIndex(
             lines,
-            l => l.TrimStart().StartsWith("On employee.ReportingManagerIdentifier", StringComparison.Ordinal));
+            l =>
+                l.TrimStart()
+                    .StartsWith("On employee.ReportingManagerIdentifier", StringComparison.Ordinal)
+        );
 
         Assert.True(condition > 0);
         Assert.EndsWith("Join reportingManager In employees", lines[condition - 1]);
@@ -446,9 +495,13 @@ public sealed class VbFormatterTests
 
         Assert.Contains(
             lines,
-            l => l.TrimStart().StartsWith(
-                "Join department In departments On employee.DepartmentId",
-                StringComparison.Ordinal));
+            l =>
+                l.TrimStart()
+                    .StartsWith(
+                        "Join department In departments On employee.DepartmentId",
+                        StringComparison.Ordinal
+                    )
+        );
     }
 
     /// <summary>A query breaks in front of its clause keywords, and needs no underscore for it.</summary>
@@ -458,8 +511,14 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("LinqQuery"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        Assert.Contains(lines, l => l.TrimStart().StartsWith("Where employee.Salary", StringComparison.Ordinal));
-        Assert.Contains(lines, l => l.TrimStart().StartsWith("Order By employee.Salary", StringComparison.Ordinal));
+        Assert.Contains(
+            lines,
+            l => l.TrimStart().StartsWith("Where employee.Salary", StringComparison.Ordinal)
+        );
+        Assert.Contains(
+            lines,
+            l => l.TrimStart().StartsWith("Order By employee.Salary", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
@@ -468,7 +527,10 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("LinqQuery"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        Assert.Contains(lines, l => l.Trim() == "Dim names = From employee In employees Select employee.Name");
+        Assert.Contains(
+            lines,
+            l => l.Trim() == "Dim names = From employee In employees Select employee.Name"
+        );
     }
 
     [Fact]
@@ -479,7 +541,8 @@ public sealed class VbFormatterTests
 
         var head = Array.FindIndex(
             lines,
-            l => l.Contains("Dim quarterlyHeadcountByDepartment", StringComparison.Ordinal));
+            l => l.Contains("Dim quarterlyHeadcountByDepartment", StringComparison.Ordinal)
+        );
 
         Assert.True(head >= 0);
         Assert.EndsWith("=", lines[head]);
@@ -501,7 +564,10 @@ public sealed class VbFormatterTests
 
         Assert.Contains(
             lines,
-            l => l.TrimStart().StartsWith("Public Sub Write(<Out> ByRef count", StringComparison.Ordinal));
+            l =>
+                l.TrimStart()
+                    .StartsWith("Public Sub Write(<Out> ByRef count", StringComparison.Ordinal)
+        );
     }
 
     /// <summary>
@@ -516,7 +582,8 @@ public sealed class VbFormatterTests
 
         Assert.DoesNotContain(
             result.Text.ReplaceLineEndings("\n").Split('\n'),
-            l => l.TrimEnd().EndsWith("<", StringComparison.Ordinal));
+            l => l.TrimEnd().EndsWith("<", StringComparison.Ordinal)
+        );
     }
 
     /// <summary>
@@ -529,7 +596,10 @@ public sealed class VbFormatterTests
         var result = VbFormatter.Format(TestCases.ReadInput("XmlLiteralAttributes"));
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
-        var head = Array.FindIndex(lines, l => l.TrimEnd().EndsWith("<employee", StringComparison.Ordinal));
+        var head = Array.FindIndex(
+            lines,
+            l => l.TrimEnd().EndsWith("<employee", StringComparison.Ordinal)
+        );
         Assert.True(head >= 0);
 
         Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 1]));
@@ -551,7 +621,10 @@ public sealed class VbFormatterTests
 
         Assert.Contains(lines, l => l.Trim() == "Dim fits = <person id=\"42\" name=\"Alice\"/>");
         Assert.Contains(lines, l => l.Trim() == "Dim hangs =");
-        Assert.Contains(lines, l => l.Trim().StartsWith("<person id=\"42\"", StringComparison.Ordinal));
+        Assert.Contains(
+            lines,
+            l => l.Trim().StartsWith("<person id=\"42\"", StringComparison.Ordinal)
+        );
         Assert.Contains(lines, l => l.Trim() == "Dim nested =");
     }
 
@@ -582,7 +655,10 @@ public sealed class VbFormatterTests
 
         // The prose keeps its one line, the mixed content its own indentation.
         Assert.Contains(lines, l => l.Contains("<body>A paragraph with plenty of text"));
-        Assert.Contains(lines, l => l == "                   Hello <%= name %>, glad you could make it.");
+        Assert.Contains(
+            lines,
+            l => l == "                   Hello <%= name %>, glad you could make it."
+        );
         Assert.Contains(lines, l => l == "   and    one   more</pre>");
     }
 
@@ -593,7 +669,8 @@ public sealed class VbFormatterTests
 
         var head = Array.FindIndex(
             lines,
-            l => l.Contains("Dim longSqlQueryExpressionAsString", StringComparison.Ordinal));
+            l => l.Contains("Dim longSqlQueryExpressionAsString", StringComparison.Ordinal)
+        );
 
         Assert.True(head >= 0);
         Assert.EndsWith("=", lines[head]);
@@ -612,7 +689,8 @@ public sealed class VbFormatterTests
 
         var head = Array.FindIndex(
             lines,
-            l => l.Contains("Dim deliberatelyWrappedQuery", StringComparison.Ordinal));
+            l => l.Contains("Dim deliberatelyWrappedQuery", StringComparison.Ordinal)
+        );
 
         Assert.True(head >= 0);
         Assert.EndsWith("=", lines[head]);
@@ -636,8 +714,10 @@ public sealed class VbFormatterTests
 
         Assert.Contains(
             lines,
-            l => l.Trim()
-                == "Dim sqlQueryExpressionAsString = \"select id, name, address, salary\" & \"from employees\"");
+            l =>
+                l.Trim()
+                == "Dim sqlQueryExpressionAsString = \"select id, name, address, salary\" & \"from employees\""
+        );
     }
 
     [Fact]
@@ -656,12 +736,15 @@ public sealed class VbFormatterTests
 
             """;
 
-        var lines = VbFormatter.Format(Source.ReplaceLineEndings("\r\n"))
-            .Text.ReplaceLineEndings("\n").Split('\n');
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
 
         Assert.Contains(
             lines,
-            l => l.Trim() == "Dim ok = candidate.IsActive AndAlso candidate.HasValidSignature");
+            l => l.Trim() == "Dim ok = candidate.IsActive AndAlso candidate.HasValidSignature"
+        );
     }
 
     [Fact]
@@ -669,8 +752,14 @@ public sealed class VbFormatterTests
     {
         var lines = Lines("TrailingComments");
 
-        Assert.Contains(lines, l => l.Trim() == "For index = 0 To elements.GetLength(0) - 1 ' walk every row");
-        Assert.Contains(lines, l => l.Trim() == "Dim upper = elements.GetLength(0) - 1 ' the last index");
+        Assert.Contains(
+            lines,
+            l => l.Trim() == "For index = 0 To elements.GetLength(0) - 1 ' walk every row"
+        );
+        Assert.Contains(
+            lines,
+            l => l.Trim() == "Dim upper = elements.GetLength(0) - 1 ' the last index"
+        );
         Assert.Contains(lines, l => l.Trim() == "Dim both = first AndAlso second ' both of them");
         Assert.DoesNotContain(lines, l => l.TrimEnd().EndsWith("-", StringComparison.Ordinal));
     }
@@ -693,8 +782,8 @@ public sealed class VbFormatterTests
         (CompilationUnitSyntax)VisualBasicSyntaxTree.ParseText(source).GetRoot();
 
     private static List<string> ImportClauses(CompilationUnitSyntax root) =>
-        root.Imports
-            .SelectMany(i => i.ImportsClauses)
+        root
+            .Imports.SelectMany(i => i.ImportsClauses)
             .Select(c => c.ToString().Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Order(StringComparer.OrdinalIgnoreCase)

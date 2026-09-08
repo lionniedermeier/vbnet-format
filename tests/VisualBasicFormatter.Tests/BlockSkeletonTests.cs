@@ -182,7 +182,8 @@ public sealed class BlockSkeletonTests
     [Fact]
     public void CollapsesMultipleBlankLinesIntoOne()
     {
-        const string Source = "Module M\r\n\r\n\r\n\r\n    Sub S()\r\n    End Sub\r\n\r\nEnd Module\r\n";
+        const string Source =
+            "Module M\r\n\r\n\r\n\r\n    Sub S()\r\n    End Sub\r\n\r\nEnd Module\r\n";
 
         var (_, after) = Format(Source);
 
@@ -196,11 +197,16 @@ public sealed class BlockSkeletonTests
     [Fact]
     public void SplitsColonChainedStatements()
     {
-        const string Source = "Module M\r\n    Sub S()\r\n        Dim a = 1 : Dim b = 2\r\n    End Sub\r\nEnd Module\r\n";
+        const string Source =
+            "Module M\r\n    Sub S()\r\n        Dim a = 1 : Dim b = 2\r\n    End Sub\r\nEnd Module\r\n";
 
         var (_, after) = Format(Source);
 
-        Assert.Contains("        Dim a = 1\r\n        Dim b = 2\r\n", after, StringComparison.Ordinal);
+        Assert.Contains(
+            "        Dim a = 1\r\n        Dim b = 2\r\n",
+            after,
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>A comment behind the last declaration hangs on the end-of-file token.</summary>
@@ -228,23 +234,37 @@ public sealed class BlockSkeletonTests
         var options = new FormatterOptions();
         var newLine = VbFormatter.DetectNewLine(source);
 
-        var tree = VisualBasicSyntaxTree.ParseText(source, new VisualBasicParseOptions(options.LanguageVersion));
+        var tree = VisualBasicSyntaxTree.ParseText(
+            source,
+            new VisualBasicParseOptions(options.LanguageVersion)
+        );
         Assert.DoesNotContain(tree.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
 
-        var normalized = VbFormatter.NormalizeWhitespace((CompilationUnitSyntax)tree.GetRoot(), options, newLine);
+        var normalized = VbFormatter.NormalizeWhitespace(
+            (CompilationUnitSyntax)tree.GetRoot(),
+            options,
+            newLine
+        );
 
         return (normalized.ToFullString(), DocEngine.Format(normalized, options, newLine));
     }
 
     private static List<string> Comments(string source) =>
-        VisualBasicSyntaxTree.ParseText(source).GetRoot()
+        VisualBasicSyntaxTree
+            .ParseText(source)
+            .GetRoot()
             .DescendantTrivia(descendIntoTrivia: true)
-            .Where(t => t.IsKind(SyntaxKind.CommentTrivia) || t.IsKind(SyntaxKind.DocumentationCommentExteriorTrivia))
+            .Where(t =>
+                t.IsKind(SyntaxKind.CommentTrivia)
+                || t.IsKind(SyntaxKind.DocumentationCommentExteriorTrivia)
+            )
             .Select(t => t.ToString().Trim())
             .ToList();
 
     private static List<string> Tokens(string source) =>
-        VisualBasicSyntaxTree.ParseText(source).GetRoot()
+        VisualBasicSyntaxTree
+            .ParseText(source)
+            .GetRoot()
             .DescendantTokens()
             .Where(t => t.Span.Length > 0)
             .Select(t => t.Text)

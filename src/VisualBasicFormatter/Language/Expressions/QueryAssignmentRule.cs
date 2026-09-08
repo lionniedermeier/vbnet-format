@@ -10,11 +10,14 @@ internal static class QueryAssignmentRule
         SyntaxToken op,
         ExpressionSyntax? value,
         VbDocVisitor visitor,
-        FormatContext context)
+        FormatContext context
+    )
     {
-        if (value is not QueryExpressionSyntax query
+        if (
+            value is not QueryExpressionSyntax query
             || !ContinuationPoints.IsImplicitAfter(op)
-            || StructuralFallback.MustPrintVerbatim(query))
+            || StructuralFallback.MustPrintVerbatim(query)
+        )
         {
             return null;
         }

@@ -13,8 +13,9 @@ public static class ImportsOrganizer
 {
     // Without the space this would produce "ImportsSystem"; the statements are passed on as text and
     // therefore have to be valid already at this point.
-    private static readonly SyntaxToken ImportsKeyword =
-        SyntaxFactory.Token(SyntaxKind.ImportsKeyword).WithTrailingTrivia(SyntaxFactory.Space);
+    private static readonly SyntaxToken ImportsKeyword = SyntaxFactory
+        .Token(SyntaxKind.ImportsKeyword)
+        .WithTrailingTrivia(SyntaxFactory.Space);
 
     private enum ImportGroup
     {
@@ -54,10 +55,15 @@ public static class ImportsOrganizer
 
             leading.AddRange(entry.Comments);
 
-            statements.Add(SyntaxFactory
-                .ImportsStatement(ImportsKeyword, SyntaxFactory.SingletonSeparatedList(entry.Clause.WithoutTrivia()))
-                .WithLeadingTrivia(leading)
-                .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine)));
+            statements.Add(
+                SyntaxFactory
+                    .ImportsStatement(
+                        ImportsKeyword,
+                        SyntaxFactory.SingletonSeparatedList(entry.Clause.WithoutTrivia())
+                    )
+                    .WithLeadingTrivia(leading)
+                    .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine))
+            );
         }
 
         return root.WithImports(SyntaxFactory.List(statements));
@@ -74,25 +80,35 @@ public static class ImportsOrganizer
             foreach (var clause in statement.ImportsClauses)
             {
                 // Comments sit above the statement and therefore belong to its first clause.
-                yield return new Entry(clause, GroupOf(clause), SortKeyOf(clause), first ? comments : []);
+                yield return new Entry(
+                    clause,
+                    GroupOf(clause),
+                    SortKeyOf(clause),
+                    first ? comments : []
+                );
                 first = false;
             }
         }
     }
 
-    private static ImportGroup GroupOf(ImportsClauseSyntax clause) => clause switch
-    {
-        SimpleImportsClauseSyntax { Alias: not null } => ImportGroup.Alias,
-        XmlNamespaceImportsClauseSyntax => ImportGroup.Xml,
-        _ => ImportGroup.Namespace,
-    };
+    private static ImportGroup GroupOf(ImportsClauseSyntax clause) =>
+        clause switch
+        {
+            SimpleImportsClauseSyntax { Alias: not null } => ImportGroup.Alias,
+            XmlNamespaceImportsClauseSyntax => ImportGroup.Xml,
+            _ => ImportGroup.Namespace,
+        };
 
-    private static string SortKeyOf(ImportsClauseSyntax clause) => clause switch
-    {
-        SimpleImportsClauseSyntax { Alias: not null } simple => simple.Alias.Identifier.ValueText,
-        SimpleImportsClauseSyntax simple => simple.Name.ToString(),
-        _ => clause.ToString().Trim(),
-    };
+    private static string SortKeyOf(ImportsClauseSyntax clause) =>
+        clause switch
+        {
+            SimpleImportsClauseSyntax { Alias: not null } simple => simple
+                .Alias
+                .Identifier
+                .ValueText,
+            SimpleImportsClauseSyntax simple => simple.Name.ToString(),
+            _ => clause.ToString().Trim(),
+        };
 
     /// <summary><c>System</c> and <c>System.*</c> sort ahead of the remaining namespaces.</summary>
     private static int SystemRank(Entry entry)
@@ -103,7 +119,8 @@ public static class ImportsOrganizer
         }
 
         var name = entry.SortKey;
-        var isSystem = name.Equals("System", StringComparison.OrdinalIgnoreCase)
+        var isSystem =
+            name.Equals("System", StringComparison.OrdinalIgnoreCase)
             || name.StartsWith("System.", StringComparison.OrdinalIgnoreCase);
 
         return isSystem ? 0 : 1;
@@ -128,7 +145,11 @@ public static class ImportsOrganizer
 
             // A blank line is a line ending with no comment preceding it on the same line.
             var previous = i > 0 ? trivia[i - 1] : default;
-            if (i == 0 || previous.IsKind(SyntaxKind.EndOfLineTrivia) || previous.IsKind(SyntaxKind.WhitespaceTrivia))
+            if (
+                i == 0
+                || previous.IsKind(SyntaxKind.EndOfLineTrivia)
+                || previous.IsKind(SyntaxKind.WhitespaceTrivia)
+            )
             {
                 lastBlankLine = i;
             }
@@ -160,5 +181,6 @@ public static class ImportsOrganizer
         ImportsClauseSyntax Clause,
         ImportGroup Group,
         string SortKey,
-        List<SyntaxTrivia> Comments);
+        List<SyntaxTrivia> Comments
+    );
 }

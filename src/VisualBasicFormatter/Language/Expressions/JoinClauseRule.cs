@@ -35,7 +35,9 @@ internal static class JoinClauseRule
             StructuralFallback.Run(children.Take(on), visitor, context),
             Doc.Indent(
                 context.SpacedBreakBefore(node.OnKeyword),
-                StructuralFallback.Run(children.Skip(on), visitor, context)));
+                StructuralFallback.Run(children.Skip(on), visitor, context)
+            )
+        );
     }
 
     private static int IndexOfOn(ChildSyntaxList children, SyntaxToken on)

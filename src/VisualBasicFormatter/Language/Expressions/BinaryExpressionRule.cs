@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using VisualBasicFormatter.Language.Statements;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language.Expressions;
@@ -89,7 +90,9 @@ internal static class BinaryExpressionRule
             items.Add(Separator(operators[i], preserved, context));
         }
 
-        return VbDocBuilder.Run(items.DrainToImmutable(), indent: !isNested);
+        var run = VbDocBuilder.Run(items.DrainToImmutable(), indent: !isNested);
+
+        return !isNested && BlockHeader.IsCondition(node) ? Doc.Indent(run) : run;
     }
 
     private static Doc Separator(SyntaxToken op, bool preserved, FormatContext context)

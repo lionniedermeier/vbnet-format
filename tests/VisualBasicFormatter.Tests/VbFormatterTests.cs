@@ -748,6 +748,54 @@ public sealed class VbFormatterTests
     }
 
     [Fact]
+    public void DoubleIndentsAWrappedIfConditionBelowItsBody()
+    {
+        var lines = Lines("BlockConditions");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.TrimStart().StartsWith("If ", StringComparison.Ordinal)
+        );
+
+        Assert.True(head >= 0);
+        Assert.EndsWith("AndAlso", lines[head].TrimEnd());
+        Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
+        Assert.Equal("candidate.HasValidSignature AndAlso", lines[head + 1].TrimStart());
+        Assert.Equal(Indent(lines[head + 1]), Indent(lines[head + 3]));
+        Assert.EndsWith("Then", lines[head + 3].TrimEnd());
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 4]));
+        Assert.Equal("Return \"A\"", lines[head + 4].TrimStart());
+    }
+
+    [Fact]
+    public void DoubleIndentsAWrappedLoopUntilCondition()
+    {
+        var lines = Lines("BlockConditions");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.TrimStart().StartsWith("Loop Until ", StringComparison.Ordinal)
+        );
+
+        Assert.True(head >= 0);
+        Assert.EndsWith("OrElse", lines[head].TrimEnd());
+        Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
+        Assert.Equal("candidate.HasExpired OrElse", lines[head + 1].TrimStart());
+    }
+
+    [Fact]
+    public void LeavesABracketedConditionOnTheHeaderColumn()
+    {
+        var lines = Lines("BlockConditions");
+
+        var head = Array.FindIndex(lines, l => l.Trim() == "If Evaluate(");
+
+        Assert.True(head >= 0);
+        Assert.Equal(") Then", lines[head + 2].Trim());
+        Assert.Equal(Indent(lines[head]), Indent(lines[head + 2]));
+    }
+
+    [Fact]
     public void DoesNotWrapAFittingLineForATrailingComment()
     {
         var lines = Lines("TrailingComments");

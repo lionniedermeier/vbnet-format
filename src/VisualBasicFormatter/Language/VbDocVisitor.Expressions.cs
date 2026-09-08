@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Language.Expressions;
+using VisualBasicFormatter.Language.Statements;
 using VisualBasicFormatter.Language.Xml;
 using VisualBasicFormatter.Printing;
 
@@ -168,7 +169,9 @@ internal sealed partial class VbDocVisitor
             _chainBreaks.Add(dot);
         }
 
-        return VbDocBuilder.Run(StructuralFallback.Format(node, this, _context));
+        var run = VbDocBuilder.Run(StructuralFallback.Format(node, this, _context));
+
+        return BlockHeader.IsCondition(node) ? Doc.Indent(run) : run;
     }
 
     /// <summary>

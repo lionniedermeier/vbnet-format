@@ -16,7 +16,7 @@ internal static class XmlAssignmentRule
         if (
             value is null
             || !IsLayoutLiteral(value)
-            || !ContinuationPoints.IsImplicitAfter(op)
+            || !ContinuationPoints.IsImplicitAfter(op, context.Unbreakable)
             || context.MustPrintVerbatim(value)
         )
         {

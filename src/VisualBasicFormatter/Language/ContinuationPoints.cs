@@ -47,10 +47,10 @@ internal static class ContinuationPoints
     ];
 
     /// <summary>Whether a line may end right behind <paramref name="token"/>.</summary>
-    public static bool IsImplicitAfter(SyntaxToken token)
+    public static bool IsImplicitAfter(SyntaxToken token, UnbreakableSpans unbreakable)
     {
-        // The kind test is cheap and rules most tokens out; the ancestor walk only runs for the few
-        // that VB would otherwise continue at.
+        // The kind test is cheap and rules most tokens out; the span lookup below only runs for the
+        // few that VB would otherwise continue at.
         var breakable = token.Kind() switch
         {
             SyntaxKind.CommaToken => true,
@@ -67,7 +67,7 @@ internal static class ContinuationPoints
             var kind => Operators.Contains(kind),
         };
 
-        return breakable && !IsInsideUnbreakable(token);
+        return breakable && !unbreakable.Contains(token.SpanStart);
     }
 
     /// <summary>
@@ -76,14 +76,11 @@ internal static class ContinuationPoints
     /// a closing parenthesis and a closing curly brace. The latter two are what let a list put its
     /// closing bracket on a line of its own, below a block element that could not have stood behind it.
     /// </summary>
-    public static bool IsImplicitBefore(SyntaxToken token)
+    public static bool IsImplicitBefore(SyntaxToken token, UnbreakableSpans unbreakable)
     {
-        if (IsInsideUnbreakable(token))
-        {
-            return false;
-        }
-
-        return token.Kind() switch
+        // The kind test is cheap and rules most tokens out; the span lookup below only runs for the
+        // few that VB would otherwise continue at.
+        var breakable = token.Kind() switch
         {
             SyntaxKind.CloseParenToken => true,
             SyntaxKind.CloseBraceToken => true,
@@ -94,6 +91,8 @@ internal static class ContinuationPoints
             SyntaxKind.OnKeyword => token.Parent is JoinClauseSyntax,
             _ => IsQueryClauseHead(token),
         };
+
+        return breakable && !unbreakable.Contains(token.SpanStart);
     }
 
     /// <summary>
@@ -107,12 +106,14 @@ internal static class ContinuationPoints
     /// <see cref="FormatContext.Gap"/>, where a wider list would move the last-resort underscore in
     /// files that have nothing to do with XML.
     /// </remarks>
-    public static bool IsImplicitAfterQueryOperator(SyntaxToken token) =>
-        token.Parent is QueryClauseSyntax && !IsInsideUnbreakable(token);
+    public static bool IsImplicitAfterQueryOperator(
+        SyntaxToken token,
+        UnbreakableSpans unbreakable
+    ) => token.Parent is QueryClauseSyntax && !unbreakable.Contains(token.SpanStart);
 
     /// <summary>Whether a run of <paramref name="token"/> may be broken after each of its operators.</summary>
-    public static bool IsBreakableOperator(SyntaxToken token) =>
-        Operators.Contains(token.Kind()) && !IsInsideUnbreakable(token);
+    public static bool IsBreakableOperator(SyntaxToken token, UnbreakableSpans unbreakable) =>
+        Operators.Contains(token.Kind()) && !unbreakable.Contains(token.SpanStart);
 
     /// <summary>
     /// Whether <paramref name="token"/> sits in XML markup rather than in VB code. An underscore
@@ -150,41 +151,9 @@ internal static class ContinuationPoints
                 return clause.GetFirstToken() == token;
             }
 
-            if (node is QueryExpressionSyntax)
+            if (node is QueryExpressionSyntax or StatementSyntax)
             {
                 return false;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Constructs whose text is one lexical unit, or whose line breaks would change the tree. None
-    /// of them is ever taken apart, so no break may be offered inside one either. A single-line
-    /// lambda is not among them: its body is an ordinary expression and continues implicitly.
-    /// </summary>
-    private static bool IsInsideUnbreakable(SyntaxToken token)
-    {
-        for (var node = token.Parent; node is not null; node = node.Parent)
-        {
-            // An embedded expression is ordinary VB again, so the continuation points above apply to
-            // it unchanged -- and it is reached before the literal around it, which is what lets a
-            // query inside <%= %> break at its clauses while the markup stays the XML rules' own.
-            if (node is XmlEmbeddedExpressionSyntax)
-            {
-                return false;
-            }
-
-            if (
-                node
-                is InterpolatedStringExpressionSyntax
-                    or XmlNodeSyntax
-                    or DirectiveTriviaSyntax
-                    or SingleLineIfStatementSyntax
-            )
-            {
-                return true;
             }
         }
 

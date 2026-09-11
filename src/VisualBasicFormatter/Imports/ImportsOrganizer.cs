@@ -11,8 +11,6 @@ namespace VisualBasicFormatter.Imports;
 /// </summary>
 public static class ImportsOrganizer
 {
-    // Without the space this would produce "ImportsSystem"; the statements are passed on as text and
-    // therefore have to be valid already at this point.
     private static readonly SyntaxToken ImportsKeyword = SyntaxFactory
         .Token(SyntaxKind.ImportsKeyword)
         .WithTrailingTrivia(SyntaxFactory.Space);
@@ -32,8 +30,65 @@ public static class ImportsOrganizer
             return root;
         }
 
-        var header = ExtractFileHeader(root.Imports[0]);
-        var entries = Flatten(root.Imports).ToList();
+        var statements = new List<ImportsStatementSyntax>(root.Imports.Count);
+        var headerTaken = false;
+
+        foreach (var segment in Segments(root.Imports))
+        {
+            if (segment.IsVerbatim)
+            {
+                statements.AddRange(segment.Statements);
+                headerTaken = true;
+                continue;
+            }
+
+            List<SyntaxTrivia> header = headerTaken
+                ? []
+                : ExtractFileHeader(segment.Statements[0]);
+            headerTaken = true;
+            statements.AddRange(Sorted(segment.Statements, header, newLine));
+        }
+
+        return root.WithImports(SyntaxFactory.List(statements));
+    }
+
+    private readonly record struct Segment(bool IsVerbatim, List<ImportsStatementSyntax> Statements);
+
+    private static IEnumerable<Segment> Segments(SyntaxList<ImportsStatementSyntax> imports)
+    {
+        List<ImportsStatementSyntax>? current = null;
+
+        foreach (var statement in imports)
+        {
+            if (statement.ContainsDirectives)
+            {
+                if (current is not null)
+                {
+                    yield return new Segment(false, current);
+                    current = null;
+                }
+
+                yield return new Segment(true, [statement]);
+                continue;
+            }
+
+            current ??= [];
+            current.Add(statement);
+        }
+
+        if (current is not null)
+        {
+            yield return new Segment(false, current);
+        }
+    }
+
+    private static IEnumerable<ImportsStatementSyntax> Sorted(
+        List<ImportsStatementSyntax> segment,
+        List<SyntaxTrivia> header,
+        string newLine
+    )
+    {
+        var entries = Flatten(segment, newLine).ToList();
 
         var ordered = entries
             .DistinctBy(e => e.Clause.ToString().Trim(), StringComparer.OrdinalIgnoreCase)
@@ -42,7 +97,6 @@ public static class ImportsOrganizer
             .ThenBy(e => e.SortKey, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var statements = new List<ImportsStatementSyntax>(ordered.Count);
         for (var i = 0; i < ordered.Count; i++)
         {
             var entry = ordered[i];
@@ -55,31 +109,28 @@ public static class ImportsOrganizer
 
             leading.AddRange(entry.Comments);
 
-            statements.Add(
-                SyntaxFactory
-                    .ImportsStatement(
-                        ImportsKeyword,
-                        SyntaxFactory.SingletonSeparatedList(entry.Clause.WithoutTrivia())
-                    )
-                    .WithLeadingTrivia(leading)
-                    .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine))
-            );
+            yield return SyntaxFactory
+                .ImportsStatement(
+                    ImportsKeyword,
+                    SyntaxFactory.SingletonSeparatedList(entry.Clause.WithoutTrivia())
+                )
+                .WithLeadingTrivia(leading)
+                .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine));
         }
-
-        return root.WithImports(SyntaxFactory.List(statements));
     }
 
-    /// <summary>Splits <c>Imports A, B</c> into one statement per clause, so that sorting is unambiguous.</summary>
-    private static IEnumerable<Entry> Flatten(SyntaxList<ImportsStatementSyntax> imports)
+    private static IEnumerable<Entry> Flatten(
+        IEnumerable<ImportsStatementSyntax> imports,
+        string newLine
+    )
     {
         foreach (var statement in imports)
         {
-            var comments = CommentsOf(statement);
+            var comments = CommentsOf(statement, newLine);
             var first = true;
 
             foreach (var clause in statement.ImportsClauses)
             {
-                // Comments sit above the statement and therefore belong to its first clause.
                 yield return new Entry(
                     clause,
                     GroupOf(clause),
@@ -110,7 +161,6 @@ public static class ImportsOrganizer
             _ => clause.ToString().Trim(),
         };
 
-    /// <summary><c>System</c> and <c>System.*</c> sort ahead of the remaining namespaces.</summary>
     private static int SystemRank(Entry entry)
     {
         if (entry.Group != ImportGroup.Namespace)
@@ -126,11 +176,6 @@ public static class ImportsOrganizer
         return isSystem ? 0 : 1;
     }
 
-    /// <summary>
-    /// Separates a file header from the comments of the first import: everything up to and including
-    /// the last blank line counts as the header and stays at the top instead of travelling with the
-    /// import it happened to precede.
-    /// </summary>
     private static List<SyntaxTrivia> ExtractFileHeader(ImportsStatementSyntax first)
     {
         var trivia = first.GetLeadingTrivia().ToList();
@@ -143,7 +188,6 @@ public static class ImportsOrganizer
                 continue;
             }
 
-            // A blank line is a line ending with no comment preceding it on the same line.
             var previous = i > 0 ? trivia[i - 1] : default;
             if (
                 i == 0
@@ -158,8 +202,7 @@ public static class ImportsOrganizer
         return lastBlankLine < 0 ? [] : trivia[..(lastBlankLine + 1)];
     }
 
-    /// <summary>The comments of a statement, without the file header and without whitespace.</summary>
-    private static List<SyntaxTrivia> CommentsOf(ImportsStatementSyntax statement)
+    private static List<SyntaxTrivia> CommentsOf(ImportsStatementSyntax statement, string newLine)
     {
         var trivia = statement.GetLeadingTrivia();
         var header = ExtractFileHeader(statement).Count;
@@ -170,7 +213,16 @@ public static class ImportsOrganizer
             if (trivia[i].IsKind(SyntaxKind.CommentTrivia))
             {
                 comments.Add(trivia[i]);
-                comments.Add(SyntaxFactory.EndOfLine(Environment.NewLine));
+                comments.Add(SyntaxFactory.EndOfLine(newLine));
+            }
+            else if (trivia[i].IsKind(SyntaxKind.DocumentationCommentTrivia))
+            {
+                comments.Add(trivia[i]);
+
+                if (!trivia[i].ToString().EndsWith('\n'))
+                {
+                    comments.Add(SyntaxFactory.EndOfLine(newLine));
+                }
             }
         }
 

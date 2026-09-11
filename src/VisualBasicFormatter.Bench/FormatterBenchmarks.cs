@@ -14,7 +14,7 @@ namespace VisualBasicFormatter.Bench;
 [MemoryDiagnoser]
 public class FormatterBenchmarks
 {
-    [Params("Large", "DeepExpression")]
+    [Params("Large", "DeepExpression", "Commented")]
     public string Sample { get; set; } = "Large";
 
     private string _source = "";
@@ -45,8 +45,7 @@ public class FormatterBenchmarks
     public string Format() => VbFormatter.Format(_source, _options).Text;
 
     [Benchmark]
-    public object Parse() =>
-        VisualBasicSyntaxTree.ParseText(_source, _parseOptions).GetRoot();
+    public object Parse() => VisualBasicSyntaxTree.ParseText(_source, _parseOptions).GetRoot();
 
     [Benchmark]
     public object BuildDoc()

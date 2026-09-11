@@ -15,8 +15,8 @@ namespace VisualBasicFormatter.Language.Expressions;
 internal static class BinaryExpressionRule
 {
     /// <summary>Whether <paramref name="node"/> starts a run rather than continuing one.</summary>
-    public static bool IsRunHead(BinaryExpressionSyntax node) =>
-        ContinuationPoints.IsBreakableOperator(node.OperatorToken)
+    public static bool IsRunHead(BinaryExpressionSyntax node, FormatContext context) =>
+        ContinuationPoints.IsBreakableOperator(node.OperatorToken, context.Unbreakable)
         && !(
             node.Parent is BinaryExpressionSyntax parent
             && parent.Left == node
@@ -39,14 +39,26 @@ internal static class BinaryExpressionRule
         bool isNested = false
     )
     {
-        var operators = new List<SyntaxToken>();
-        var operands = new List<ExpressionSyntax>();
+        var count = 1;
+        for (
+            var scan = node;
+            scan.Left is BinaryExpressionSyntax scanLeft
+                && scanLeft.OperatorToken.IsKind(node.OperatorToken.Kind());
+            scan = scanLeft
+        )
+        {
+            count++;
+        }
+
+        var operators = new SyntaxToken[count];
+        var operands = new ExpressionSyntax[count + 1];
+        var index = count - 1;
         var current = node;
 
         while (true)
         {
-            operators.Add(current.OperatorToken);
-            operands.Add(current.Right);
+            operators[index] = current.OperatorToken;
+            operands[index + 1] = current.Right;
 
             if (
                 current.Left is BinaryExpressionSyntax left
@@ -54,27 +66,34 @@ internal static class BinaryExpressionRule
             )
             {
                 current = left;
+                index--;
                 continue;
             }
 
-            operands.Add(current.Left);
+            operands[0] = current.Left;
             break;
         }
 
-        operators.Reverse();
-        operands.Reverse();
-
-        var preserved =
-            node.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
-            && operators.Any(context.EndsItsLine);
+        var preserved = false;
+        if (node.OperatorToken.IsKind(SyntaxKind.AmpersandToken))
+        {
+            foreach (var op in operators)
+            {
+                if (context.EndsItsLine(op))
+                {
+                    preserved = true;
+                    break;
+                }
+            }
+        }
 
         // Content and separator in turn: an operand carries the operator that follows it, and the
         // break that operator permits stands between the two.
         var items = ImmutableArray.CreateBuilder<Doc>();
 
-        for (var i = 0; i < operands.Count; i++)
+        for (var i = 0; i < operands.Length; i++)
         {
-            if (i >= operators.Count)
+            if (i >= operators.Length)
             {
                 items.Add(FormatOperand(operands[i], visitor, context));
                 continue;
@@ -116,7 +135,7 @@ internal static class BinaryExpressionRule
         VbDocVisitor visitor,
         FormatContext context
     ) =>
-        operand is BinaryExpressionSyntax binary && IsRunHead(binary)
+        operand is BinaryExpressionSyntax binary && IsRunHead(binary, context)
             ? Format(binary, visitor, context, isNested: true)
             : visitor.Format(operand);
 }

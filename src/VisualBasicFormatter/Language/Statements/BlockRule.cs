@@ -11,13 +11,14 @@ namespace VisualBasicFormatter.Language.Statements;
 internal static class BlockRule
 {
     /// <summary>header, indented body, footer.</summary>
-    public static Doc Format(
+    public static Doc Format<T>(
         Doc header,
-        IEnumerable<SyntaxNode> body,
+        SyntaxList<T> body,
         SyntaxNode? footer,
         VbDocVisitor visitor,
         FormatContext context
-    ) =>
+    )
+        where T : SyntaxNode =>
         Doc.Concat(
             header,
             Body(body, visitor, context),
@@ -25,9 +26,6 @@ internal static class BlockRule
         );
 
     /// <summary>The body of a block, one level deeper than its header.</summary>
-    public static Doc Body(
-        IEnumerable<SyntaxNode> body,
-        VbDocVisitor visitor,
-        FormatContext context
-    ) => Doc.Indent(StatementListRule.Format(body, visitor, context));
+    public static Doc Body<T>(SyntaxList<T> body, VbDocVisitor visitor, FormatContext context)
+        where T : SyntaxNode => Doc.Indent(StatementListRule.Format(body, visitor, context));
 }

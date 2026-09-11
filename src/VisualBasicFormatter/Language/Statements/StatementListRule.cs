@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using VisualBasicFormatter.Printing;
 
@@ -11,13 +10,10 @@ namespace VisualBasicFormatter.Language.Statements;
 internal static class StatementListRule
 {
     /// <summary>Prints every node in <paramref name="nodes"/>, preceded by the break that leads to it.</summary>
-    public static Doc Format(
-        IEnumerable<SyntaxNode> nodes,
-        VbDocVisitor visitor,
-        FormatContext context
-    )
+    public static Doc Format<T>(SyntaxList<T> nodes, VbDocVisitor visitor, FormatContext context)
+        where T : SyntaxNode
     {
-        var parts = ImmutableArray.CreateBuilder<Doc>();
+        using var parts = new DocListBuilder(2 * nodes.Count);
 
         foreach (var node in nodes)
         {
@@ -25,7 +21,7 @@ internal static class StatementListRule
             parts.Add(visitor.Format(node));
         }
 
-        return Doc.Concat(parts.DrainToImmutable());
+        return parts.ToDoc();
     }
 
     /// <summary>Prints <paramref name="node"/> the same way, or nothing when it is absent.</summary>

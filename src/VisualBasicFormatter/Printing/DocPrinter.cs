@@ -526,7 +526,11 @@ internal sealed class DocPrinter
 
         // Removing only spaces walks the column straight back; a tab in the run needs a remeasure.
         _column = tabs
-            ? TextWidth.Measure(_output.ToString(_lineStart, end - _lineStart), 0, _options.IndentSize)
+            ? TextWidth.Measure(
+                _output.ToString(_lineStart, end - _lineStart),
+                0,
+                _options.IndentSize
+            )
             : _column - (_output.Length - end);
 
         _output.Length = end;

@@ -24,15 +24,15 @@ internal static class Spacing
         // An XML namespace import is markup: "<xmlns:p="urn">" is written with no inner spaces, and
         // a space after the "<" makes VB parse it as something else entirely. The space between the
         // "Imports" keyword and the "<" is left to the default.
-        if (before is SyntaxKind.LessThanToken && previous.Parent is XmlNamespaceImportsClauseSyntax)
+        if (
+            before is SyntaxKind.LessThanToken
+            && previous.Parent is XmlNamespaceImportsClauseSyntax
+        )
         {
             return false;
         }
 
-        if (
-            after is SyntaxKind.GreaterThanToken
-            && next.Parent is XmlNamespaceImportsClauseSyntax
-        )
+        if (after is SyntaxKind.GreaterThanToken && next.Parent is XmlNamespaceImportsClauseSyntax)
         {
             return false;
         }

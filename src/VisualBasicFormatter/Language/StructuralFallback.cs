@@ -34,13 +34,15 @@ internal static class StructuralFallback
         }
 
         // One doc per child, plus one gap between each pair. Empty parts (a no-space gap, an absent
-        // optional child) are left out here so the concat never has to filter them.
-        var parts = ImmutableArray.CreateBuilder<Doc>(2 * count - 1);
+        // optional child) are left out by the builder, so the concat never has to filter them.
+        using var parts = new DocListBuilder(2 * count - 1);
 
         for (var i = 0; i < count; i++)
         {
             var child = children[i];
-            Add(parts, child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken()));
+            parts.Add(
+                child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken())
+            );
 
             if (i + 1 < count)
             {
@@ -49,24 +51,13 @@ internal static class StructuralFallback
                 // Whatever stood between the two -- a space, a line break, an underscore
                 // continuation -- is dropped and the spacing re-decided from the two tokens. An
                 // attribute list is the one boundary that ends its line rather than merely separating.
-                Add(parts, AttributePlacementRule.Break(child, next, context) ?? context.Gap(child, next));
+                parts.Add(
+                    AttributePlacementRule.Break(child, next, context) ?? context.Gap(child, next)
+                );
             }
         }
 
-        return parts.Count switch
-        {
-            0 => Doc.Nothing,
-            1 => parts[0],
-            _ => Doc.Concat(parts.DrainToImmutable()),
-        };
-
-        static void Add(ImmutableArray<Doc>.Builder parts, Doc part)
-        {
-            if (part is not DocNothing)
-            {
-                parts.Add(part);
-            }
-        }
+        return parts.ToDoc();
     }
 
     /// <summary>A consecutive run of children, spaced the way <see cref="Format"/> spaces them.</summary>
@@ -94,5 +85,4 @@ internal static class StructuralFallback
 
         return Doc.Concat(parts.DrainToImmutable());
     }
-
 }

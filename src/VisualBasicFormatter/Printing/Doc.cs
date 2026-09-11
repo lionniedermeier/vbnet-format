@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 
 namespace VisualBasicFormatter.Printing;
 
@@ -45,7 +46,7 @@ internal abstract class Doc
     /// never aliased, so it is adopted as the backing store rather than copied.
     /// </remarks>
     public static Doc Concat(params Doc[] parts) =>
-        Concat(System.Runtime.InteropServices.ImmutableCollectionsMarshal.AsImmutableArray(parts));
+        Concat(ImmutableCollectionsMarshal.AsImmutableArray(parts));
 
     /// <summary>Two parts, without allocating an array when one of them is <see cref="Nothing"/>.</summary>
     public static Doc Concat(Doc first, Doc second)
@@ -64,11 +65,38 @@ internal abstract class Doc
     }
 
     /// <inheritdoc cref="Concat(Doc, Doc)"/>
-    public static Doc Concat(Doc first, Doc second, Doc third) =>
-        Concat(ImmutableArray.Create(first, second, third));
+    public static Doc Concat(Doc first, Doc second, Doc third)
+    {
+        var dropped =
+            (first is DocNothing ? 1 : 0)
+            + (second is DocNothing ? 1 : 0)
+            + (third is DocNothing ? 1 : 0);
 
-    /// <inheritdoc cref="Concat(Doc[])"/>
-    public static Doc Concat(IEnumerable<Doc> parts) => Concat(parts.ToImmutableArray());
+        if (dropped == 0)
+        {
+            return new DocConcat(ImmutableArray.Create(first, second, third));
+        }
+
+        return Concat(ImmutableCollectionsMarshal.AsImmutableArray<Doc>([first, second, third]));
+    }
+
+    public static Doc Concat(Doc first, Doc second, Doc third, Doc fourth)
+    {
+        var dropped =
+            (first is DocNothing ? 1 : 0)
+            + (second is DocNothing ? 1 : 0)
+            + (third is DocNothing ? 1 : 0)
+            + (fourth is DocNothing ? 1 : 0);
+
+        if (dropped == 0)
+        {
+            return new DocConcat(ImmutableArray.Create(first, second, third, fourth));
+        }
+
+        return Concat(
+            ImmutableCollectionsMarshal.AsImmutableArray<Doc>([first, second, third, fourth])
+        );
+    }
 
     /// <inheritdoc cref="Concat(Doc[])"/>
     public static Doc Concat(ImmutableArray<Doc> parts)
@@ -99,17 +127,19 @@ internal abstract class Doc
             return Nothing;
         }
 
-        var builder = ImmutableArray.CreateBuilder<Doc>(kept);
+        var result = new Doc[kept];
+        var index = 0;
         foreach (var part in parts)
         {
             if (part is not DocNothing)
             {
-                builder.Add(part);
+                result[index++] = part;
             }
         }
 
-        var result = builder.MoveToImmutable();
-        return result.Length == 1 ? result[0] : new DocConcat(result);
+        return kept == 1
+            ? result[0]
+            : new DocConcat(ImmutableCollectionsMarshal.AsImmutableArray(result));
     }
 
     /// <summary>The flat-or-broken decision unit.</summary>
@@ -124,7 +154,7 @@ internal abstract class Doc
     /// the first whose first line fits and falls back to the last.
     /// </summary>
     public static Doc ConditionalGroup(params Doc[] states) =>
-        ConditionalGroup(states.ToImmutableArray());
+        ConditionalGroup(ImmutableCollectionsMarshal.AsImmutableArray(states));
 
     /// <inheritdoc cref="ConditionalGroup(Doc[])"/>
     public static Doc ConditionalGroup(ImmutableArray<Doc> states) =>
@@ -138,6 +168,8 @@ internal abstract class Doc
     /// <summary>Content one indent level deeper.</summary>
     public static Doc Indent(Doc content) =>
         content is DocNothing ? Nothing : new DocIndent(content);
+
+    public static Doc Indent(Doc first, Doc second) => Indent(Concat(first, second));
 
     /// <inheritdoc cref="Indent(Doc)"/>
     public static Doc Indent(params Doc[] parts) => Indent(Concat(parts));

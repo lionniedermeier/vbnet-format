@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
@@ -15,7 +16,10 @@ internal static class MemberChainRule
     /// The dots to break at, in source order, or empty when <paramref name="node"/> does not head a
     /// chain worth breaking.
     /// </summary>
-    public static ImmutableArray<SyntaxToken> BreakDots(InvocationExpressionSyntax node)
+    public static ImmutableArray<SyntaxToken> BreakDots(
+        InvocationExpressionSyntax node,
+        FormatContext context
+    )
     {
         // Only the outermost call owns the chain; otherwise every link would offer it again.
         if (ContinuesUpwards(node))
@@ -23,21 +27,33 @@ internal static class MemberChainRule
             return [];
         }
 
-        var dots = ImmutableArray.CreateBuilder<SyntaxToken>();
+        var count = CountDots(node, context);
+
+        // One dot is not a chain; a single call is better served by breaking its argument list.
+        // Plain property hops are skipped above: splitting State.Gesellschaften.Values shortens the
+        // line barely and reads badly.
+        if (count < 2)
+        {
+            return [];
+        }
+
+        var dots = new SyntaxToken[count];
+        var index = count - 1;
 
         for (ExpressionSyntax? current = node; current is not null; )
         {
             switch (current)
             {
-                // A missing Expression is the leading dot of a With block, of an initializer key or
-                // of a conditional access -- the cases where VB does demand an underscore.
                 case MemberAccessExpressionSyntax access when access.Expression is not null:
                     if (
                         IsInvoked(access)
-                        && ContinuationPoints.IsImplicitAfter(access.OperatorToken)
+                        && ContinuationPoints.IsImplicitAfter(
+                            access.OperatorToken,
+                            context.Unbreakable
+                        )
                     )
                     {
-                        dots.Add(access.OperatorToken);
+                        dots[index--] = access.OperatorToken;
                     }
 
                     current = access.Expression;
@@ -53,16 +69,45 @@ internal static class MemberChainRule
             }
         }
 
-        // One dot is not a chain; a single call is better served by breaking its argument list.
-        // Plain property hops are skipped above: splitting State.Gesellschaften.Values shortens the
-        // line barely and reads badly.
-        if (dots.Count < 2)
+        return ImmutableCollectionsMarshal.AsImmutableArray(dots);
+    }
+
+    private static int CountDots(InvocationExpressionSyntax node, FormatContext context)
+    {
+        var count = 0;
+
+        for (ExpressionSyntax? current = node; current is not null; )
         {
-            return [];
+            switch (current)
+            {
+                // A missing Expression is the leading dot of a With block, of an initializer key or
+                // of a conditional access -- the cases where VB does demand an underscore.
+                case MemberAccessExpressionSyntax access when access.Expression is not null:
+                    if (
+                        IsInvoked(access)
+                        && ContinuationPoints.IsImplicitAfter(
+                            access.OperatorToken,
+                            context.Unbreakable
+                        )
+                    )
+                    {
+                        count++;
+                    }
+
+                    current = access.Expression;
+                    break;
+
+                case InvocationExpressionSyntax invocation:
+                    current = invocation.Expression;
+                    break;
+
+                default:
+                    current = null;
+                    break;
+            }
         }
 
-        dots.Reverse();
-        return dots.DrainToImmutable();
+        return count;
     }
 
     private static bool IsInvoked(MemberAccessExpressionSyntax access) =>

@@ -15,7 +15,7 @@ internal static class QueryAssignmentRule
     {
         if (
             value is not QueryExpressionSyntax query
-            || !ContinuationPoints.IsImplicitAfter(op)
+            || !ContinuationPoints.IsImplicitAfter(op, context.Unbreakable)
             || context.MustPrintVerbatim(query)
         )
         {

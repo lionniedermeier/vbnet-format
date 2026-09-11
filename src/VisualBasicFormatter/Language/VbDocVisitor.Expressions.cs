@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Language.Expressions;
@@ -135,21 +136,36 @@ internal sealed partial class VbDocVisitor
         ImmutableArray<ExpressionSyntax> operands,
         ImmutableArray<SyntaxToken> commas,
         SyntaxToken close
-    ) =>
-        Doc.Concat(
+    )
+    {
+        var elements = new Doc[operands.Length];
+        var hasBlock = false;
+
+        for (var i = 0; i < operands.Length; i++)
+        {
+            elements[i] = Format(operands[i]);
+
+            if (TrailingExpansion.IsBlock(operands[i]))
+            {
+                hasBlock = true;
+            }
+        }
+
+        return Doc.Concat(
             _context.Token(ifKeyword),
             VbDocBuilder.List(
                 open,
                 Doc.Nothing,
-                [.. operands.Select(Format)],
+                ImmutableCollectionsMarshal.AsImmutableArray(elements),
                 commas,
                 close,
                 TrailingExpansion.IsExpandable(operands[^1]),
-                operands.Any(TrailingExpansion.IsBlock),
+                hasBlock,
                 ListLayout.Packed,
                 _context
             )
         );
+    }
 
     /// <summary>
     /// The outermost call of a chain owns the chain: it marks the dots to break at and wraps the
@@ -157,7 +173,7 @@ internal sealed partial class VbDocVisitor
     /// </summary>
     public override Doc VisitInvocationExpression(InvocationExpressionSyntax node)
     {
-        var dots = MemberChainRule.BreakDots(node);
+        var dots = MemberChainRule.BreakDots(node, _context);
 
         if (dots.IsEmpty)
         {
@@ -215,7 +231,7 @@ internal sealed partial class VbDocVisitor
 
     /// <inheritdoc/>
     public override Doc VisitBinaryExpression(BinaryExpressionSyntax node) =>
-        BinaryExpressionRule.IsRunHead(node)
+        BinaryExpressionRule.IsRunHead(node, _context)
             ? BinaryExpressionRule.Format(node, this, _context)
             : StructuralFallback.Format(node, this, _context);
 

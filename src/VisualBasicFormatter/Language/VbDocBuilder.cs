@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using VisualBasicFormatter.Printing;
 
@@ -44,18 +45,68 @@ internal static class VbDocBuilder
         VbDocVisitor visitor,
         FormatContext context
     )
-        where T : SyntaxNode =>
-        List(
+        where T : SyntaxNode
+    {
+        var (elements, separators) = ToArrays(list, visitor);
+        var hasBlock = false;
+
+        foreach (var element in list)
+        {
+            if (TrailingExpansion.IsBlock(element))
+            {
+                hasBlock = true;
+                break;
+            }
+        }
+
+        return List(
             open,
             prefix,
-            [.. list.Select(visitor.Format)],
-            [.. list.GetSeparators()],
+            elements,
+            separators,
             close,
             list.Count > 0 && TrailingExpansion.IsExpandable(list[^1]),
-            list.Any(TrailingExpansion.IsBlock),
+            hasBlock,
             layout,
             context
         );
+    }
+
+    public static Doc Run<T>(SeparatedSyntaxList<T> list, VbDocVisitor visitor, FormatContext context)
+        where T : SyntaxNode
+    {
+        var (elements, separators) = ToArrays(list, visitor);
+
+        return Run(Items(Doc.Nothing, elements, separators, context));
+    }
+
+    private static (
+        ImmutableArray<Doc> Elements,
+        ImmutableArray<SyntaxToken> Separators
+    ) ToArrays<T>(SeparatedSyntaxList<T> list, VbDocVisitor visitor)
+        where T : SyntaxNode
+    {
+        var count = list.Count;
+        var elements = count == 0 ? [] : new Doc[count];
+
+        for (var i = 0; i < count; i++)
+        {
+            elements[i] = visitor.Format(list[i]);
+        }
+
+        var separatorCount = list.SeparatorCount;
+        var separators = separatorCount == 0 ? [] : new SyntaxToken[separatorCount];
+
+        for (var i = 0; i < separatorCount; i++)
+        {
+            separators[i] = list.GetSeparator(i);
+        }
+
+        return (
+            ImmutableCollectionsMarshal.AsImmutableArray(elements),
+            ImmutableCollectionsMarshal.AsImmutableArray(separators)
+        );
+    }
 
     /// <inheritdoc cref="List{T}(SyntaxToken, Doc, SeparatedSyntaxList{T}, SyntaxToken, ListLayout, VbDocVisitor, FormatContext)"/>
     public static Doc List<T>(
@@ -113,7 +164,7 @@ internal static class VbDocBuilder
         // Without a separator the only break on offer is the one behind the bracket, and that just
         // moves the problem to the next line. Leaving it out is what lets a lone argument keep its
         // call on one line and break inside itself instead.
-        if (separators.IsEmpty)
+        if (separators.IsEmpty && (elements.IsEmpty || expandLast || layout != ListLayout.Packed))
         {
             return Doc.Concat(
                 context.Token(open),
@@ -191,7 +242,7 @@ internal static class VbDocBuilder
         FormatContext context
     )
     {
-        var items = ImmutableArray.CreateBuilder<Doc>();
+        using var items = new DocListBuilder(2 * elements.Length - 1);
 
         for (var i = 0; i < elements.Length; i++)
         {
@@ -207,7 +258,7 @@ internal static class VbDocBuilder
             items.Add(context.BreakAfter(separators[i]));
         }
 
-        return items.DrainToImmutable();
+        return items.ToImmutable();
     }
 
     /// <summary>The layout, still without the group that decides between flat and broken.</summary>

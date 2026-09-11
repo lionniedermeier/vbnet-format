@@ -192,6 +192,10 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitCaseBlock(CaseBlockSyntax node) =>
         Doc.Concat(Format(node.CaseStatement), BlockRule.Body(node.Statements, this, _context));
 
+    /// <inheritdoc/>
+    public override Doc VisitCaseStatement(CaseStatementSyntax node) =>
+        CaseStatementRule.Format(node, this, _context);
+
     /// <summary>
     /// A lambda starts wherever the expression around it happens to end, so its body and its
     /// <c>End Function</c> hang off that column rather than off the enclosing statement's indent.

@@ -17,8 +17,8 @@ internal static class ConcatAssignmentRule
         if (
             value is not BinaryExpressionSyntax binary
             || !binary.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
-            || !BinaryExpressionRule.IsRunHead(binary)
-            || !ContinuationPoints.IsImplicitAfter(op)
+            || !BinaryExpressionRule.IsRunHead(binary, context)
+            || !ContinuationPoints.IsImplicitAfter(op, context.Unbreakable)
             || context.MustPrintVerbatim(binary)
         )
         {

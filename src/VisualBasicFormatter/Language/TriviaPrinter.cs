@@ -81,7 +81,7 @@ internal static class TriviaPrinter
     /// </summary>
     public static Doc Trailing(SyntaxToken token, FormatContext context)
     {
-        if (token.TrailingTrivia.Count == 0)
+        if (!HasPrintableTrivia(token.TrailingTrivia))
         {
             return Doc.Nothing;
         }

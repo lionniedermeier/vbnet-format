@@ -23,7 +23,7 @@ internal sealed class FormatContext
         NewLine = newLine;
 
         _text = new Lazy<SourceText>(() => root.SyntaxTree.GetText());
-        _contentTriviaStarts = ContentTriviaStarts(root);
+        (_contentTriviaStarts, Unbreakable) = UnbreakableSpans.Build(root);
 
         PrintOptions = new PrintOptions
         {
@@ -49,6 +49,8 @@ internal sealed class FormatContext
     /// <summary>The subset of <see cref="Options"/> the printer cares about.</summary>
     public PrintOptions PrintOptions { get; }
 
+    public UnbreakableSpans Unbreakable { get; }
+
     /// <summary>
     /// A token with the comments that hang on it. The whitespace that separated it from its
     /// neighbours is deliberately not emitted: spacing is the rule's decision, not the input's.
@@ -66,7 +68,7 @@ internal sealed class FormatContext
             return text;
         }
 
-        return Doc.Concat(Doc.Concat(leading, text), trailing);
+        return Doc.Concat(leading, text, trailing);
     }
 
     // Keywords and punctuation are a closed set with a fixed spelling, so their doc node is built
@@ -117,26 +119,26 @@ internal sealed class FormatContext
     /// keeps the printer from proposing one where VB forbids it.
     /// </summary>
     public Doc BreakAfter(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitAfter(token) ? Doc.Line : Doc.Nothing;
+        ContinuationPoints.IsImplicitAfter(token, Unbreakable) ? Doc.Line : Doc.Nothing;
 
     /// <summary>The same, rendered as nothing while the group stays flat: behind <c>(</c> or a dot.</summary>
     public Doc SoftBreakAfter(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitAfter(token) ? Doc.SoftLine : Doc.Nothing;
+        ContinuationPoints.IsImplicitAfter(token, Unbreakable) ? Doc.SoftLine : Doc.Nothing;
 
     public bool EndsItsLine(SyntaxToken token)
     {
-        var next = token.GetNextToken();
-        if (next == default)
-        {
-            return false;
-        }
-
         foreach (var trivia in token.TrailingTrivia)
         {
             if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
             {
                 return true;
             }
+        }
+
+        var next = token.GetNextToken();
+        if (next == default)
+        {
+            return false;
         }
 
         foreach (var trivia in next.LeadingTrivia)
@@ -174,41 +176,15 @@ internal sealed class FormatContext
         return index < _contentTriviaStarts.Length && _contentTriviaStarts[index] < span.End;
     }
 
-    private static int[] ContentTriviaStarts(SyntaxNode root)
-    {
-        var starts = new List<int>();
-
-        // DescendantTokens yields in source order, so the offsets come out ascending.
-        foreach (var token in root.DescendantTokens())
-        {
-            foreach (var trivia in token.LeadingTrivia)
-            {
-                if (IsContentTrivia(trivia))
-                {
-                    starts.Add(token.SpanStart);
-                    break;
-                }
-            }
-        }
-
-        return [.. starts];
-    }
-
-    private static bool IsContentTrivia(SyntaxTrivia trivia) =>
-        trivia.IsDirective
-        || trivia.IsKind(SyntaxKind.CommentTrivia)
-        || trivia.IsKind(SyntaxKind.DocumentationCommentTrivia)
-        || trivia.IsKind(SyntaxKind.DisabledTextTrivia);
-
     public Doc HardBreakAfter(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitAfter(token) ? Doc.HardLine : Doc.Space;
+        ContinuationPoints.IsImplicitAfter(token, Unbreakable) ? Doc.HardLine : Doc.Space;
 
     /// <summary>
     /// A break the language permits in front of <paramref name="token"/>: a query clause head, or a
     /// closing bracket. Everywhere else the break belongs behind the token it follows.
     /// </summary>
     public Doc BreakBefore(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitBefore(token) ? Doc.Line : Doc.Nothing;
+        ContinuationPoints.IsImplicitBefore(token, Unbreakable) ? Doc.Line : Doc.Nothing;
 
     /// <summary>
     /// The same, for a place where the two tokens must stay apart even when the break is refused:
@@ -217,14 +193,16 @@ internal sealed class FormatContext
     /// layout -- here it would cost the code its meaning.
     /// </summary>
     public Doc SpacedBreakBefore(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitBefore(token) ? Doc.Line : Doc.Space;
+        ContinuationPoints.IsImplicitBefore(token, Unbreakable) ? Doc.Line : Doc.Space;
 
     /// <summary>The same, rendered as nothing while the group stays flat: in front of a closing bracket.</summary>
     public Doc SoftBreakBefore(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitBefore(token) ? Doc.SoftLine : Doc.Nothing;
+        ContinuationPoints.IsImplicitBefore(token, Unbreakable) ? Doc.SoftLine : Doc.Nothing;
 
     public Doc BreakAfterQueryOperator(SyntaxToken token) =>
-        ContinuationPoints.IsImplicitAfterQueryOperator(token) ? Doc.Line : Doc.Nothing;
+        ContinuationPoints.IsImplicitAfterQueryOperator(token, Unbreakable)
+            ? Doc.Line
+            : Doc.Nothing;
 
     /// <summary>
     /// A break between the children of an XML element. This is the one kind of break that needs no

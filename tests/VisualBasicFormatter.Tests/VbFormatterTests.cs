@@ -130,6 +130,16 @@ public sealed class VbFormatterTests
     }
 
     [Fact]
+    public void SortsImportsAroundAPreprocessorDirective()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("ConditionalImports"));
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+        Assert.Contains("#If Not DEBUG Then", result.Text);
+        Assert.Contains("#End If", result.Text);
+    }
+
+    [Fact]
     public void LeavesImportsAloneWhenDisabled()
     {
         var input = TestCases.ReadInput("UnsortedImports");
@@ -837,7 +847,8 @@ public sealed class VbFormatterTests
     [InlineData("Dim n As Integer?=Nothing", "Dim n As Integer? = Nothing")]
     public void NormalizesSpacingBetweenTokens(string statement, string expected)
     {
-        var source = $"Module M\r\n    Sub S()\r\n        {statement}\r\n    End Sub\r\nEnd Module\r\n";
+        var source =
+            $"Module M\r\n    Sub S()\r\n        {statement}\r\n    End Sub\r\nEnd Module\r\n";
 
         var result = VbFormatter.Format(source);
 

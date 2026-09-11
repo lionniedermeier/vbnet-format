@@ -17,7 +17,7 @@ internal static class XmlAssignmentRule
             value is null
             || !IsLayoutLiteral(value)
             || !ContinuationPoints.IsImplicitAfter(op)
-            || StructuralFallback.MustPrintVerbatim(value)
+            || context.MustPrintVerbatim(value)
         )
         {
             return null;

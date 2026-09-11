@@ -821,6 +821,33 @@ public sealed class VbFormatterTests
         Assert.Contains(lines, l => l.Trim() == "beta");
     }
 
+    /// <summary>
+    /// The formatter owns the spacing between tokens rather than copying the author's. No golden
+    /// fixture carries badly-spaced input, because there used to be a pre-pass that fixed it before
+    /// the rules ran; these are the cases that pre-pass covered.
+    /// </summary>
+    [Theory]
+    [InlineData("Dim x As Integer=1", "Dim x As Integer = 1")]
+    [InlineData("Dim w= 1+2", "Dim w = 1 + 2")]
+    [InlineData("Dim y = Foo( a ,b )", "Dim y = Foo(a, b)")]
+    [InlineData("Dim z = a\\b", "Dim z = a \\ b")]
+    [InlineData("Call  obj . Method ( x )", "Call obj.Method(x)")]
+    [InlineData("Dim q = If( a>0 , a , -a )", "Dim q = If(a > 0, a, -a)")]
+    [InlineData("Dim c = CType( x , Long )", "Dim c = CType(x, Long)")]
+    [InlineData("Dim n As Integer?=Nothing", "Dim n As Integer? = Nothing")]
+    public void NormalizesSpacingBetweenTokens(string statement, string expected)
+    {
+        var source = $"Module M\r\n    Sub S()\r\n        {statement}\r\n    End Sub\r\nEnd Module\r\n";
+
+        var result = VbFormatter.Format(source);
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+        Assert.Contains(
+            expected,
+            result.Text.ReplaceLineEndings("\n").Split('\n').Select(l => l.Trim())
+        );
+    }
+
     private static string[] Lines(string name) =>
         VbFormatter.Format(TestCases.ReadInput(name)).Text.ReplaceLineEndings("\n").Split('\n');
 

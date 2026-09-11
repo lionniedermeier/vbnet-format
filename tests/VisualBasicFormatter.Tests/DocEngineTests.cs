@@ -17,16 +17,16 @@ public sealed class DocEngineTests
     [MemberData(nameof(TestCases.Names), MemberType = typeof(TestCases))]
     public void PrintsItsOwnOutputUnchangedAgain(string name)
     {
-        var (normalized, options, newLine) = Normalize(TestCases.ReadInput(name));
-        var once = DocEngine.Format(normalized, options, newLine);
+        var (root, options, newLine) = Parse(TestCases.ReadInput(name));
+        var once = DocEngine.Format(root, options, newLine);
 
-        var (again, _, _) = Normalize(once);
+        var (again, _, _) = Parse(once);
 
         Assert.Equal(once, DocEngine.Format(again, options, newLine));
     }
 
-    /// <summary>Parses and runs the spacing pre-pass, i.e. everything the engine sits behind.</summary>
-    private static (CompilationUnitSyntax Root, FormatterOptions Options, string NewLine) Normalize(
+    /// <summary>Parses <paramref name="source"/>, i.e. everything the engine sits behind.</summary>
+    private static (CompilationUnitSyntax Root, FormatterOptions Options, string NewLine) Parse(
         string source
     )
     {
@@ -37,8 +37,7 @@ public sealed class DocEngineTests
             source,
             new VisualBasicParseOptions(options.LanguageVersion)
         );
-        var root = (CompilationUnitSyntax)tree.GetRoot();
 
-        return (VbFormatter.NormalizeWhitespace(root, options, newLine), options, newLine);
+        return ((CompilationUnitSyntax)tree.GetRoot(), options, newLine);
     }
 }

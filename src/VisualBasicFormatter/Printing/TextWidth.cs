@@ -18,6 +18,12 @@ internal static class TextWidth
     /// <summary>The column after writing <paramref name="text"/> at <paramref name="startColumn"/>.</summary>
     public static int Measure(string text, int startColumn, int indentSize)
     {
+        // Tabs are the only character that does not advance the column by exactly one.
+        if (!text.Contains('\t'))
+        {
+            return startColumn + text.Length;
+        }
+
         var column = startColumn;
         foreach (var c in text)
         {

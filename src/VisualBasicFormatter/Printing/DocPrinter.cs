@@ -15,10 +15,33 @@ internal sealed class DocPrinter
     private readonly Stack<Command> _commands = new();
     private readonly List<Command> _lineSuffixes = [];
 
+    // Reused across every Fits call; Fits never runs while another Fits is on the stack.
+    private readonly Stack<Command> _fitsQueue = new();
+
+    // Space-indent strings by width. Widths repeat heavily -- one per level, plus the align columns.
+    private readonly Dictionary<int, string> _indents = new() { [0] = "" };
+
     private int _column;
     private int _lineStart;
 
     private DocPrinter(PrintOptions options) => _options = options;
+
+    private Indentation Deeper(Indentation current)
+    {
+        if (_options.UseTabs)
+        {
+            return new Indentation(
+                current.Text + '\t',
+                TextWidth.Advance(current.Width, '\t', _options.IndentSize)
+            );
+        }
+
+        var width = current.Width + _options.IndentSize;
+        return new Indentation(Spaces(width), width);
+    }
+
+    private string Spaces(int width) =>
+        _indents.TryGetValue(width, out var text) ? text : _indents[width] = new string(' ', width);
 
     private enum PrintMode
     {
@@ -70,7 +93,7 @@ internal sealed class DocPrinter
                 _commands.Push(
                     command with
                     {
-                        Indent = command.Indent.Increase(_options),
+                        Indent = Deeper(command.Indent),
                         Doc = indent.Content,
                     }
                 );
@@ -82,7 +105,7 @@ internal sealed class DocPrinter
                 _commands.Push(
                     command with
                     {
-                        Indent = Indentation.At(_column),
+                        Indent = new Indentation(Spaces(_column), _column),
                         Doc = align.Content,
                     }
                 );
@@ -312,7 +335,8 @@ internal sealed class DocPrinter
         }
 
         var column = _column;
-        var queue = new Stack<Command>();
+        var queue = _fitsQueue;
+        queue.Clear();
         queue.Push(next);
 
         var rest = _commands.GetEnumerator();
@@ -487,8 +511,11 @@ internal sealed class DocPrinter
     private void TrimTrailingWhitespace()
     {
         var end = _output.Length;
+        var tabs = false;
+
         while (end > _lineStart && _output[end - 1] is ' ' or '\t')
         {
+            tabs |= _output[end - 1] == '\t';
             end--;
         }
 
@@ -497,12 +524,12 @@ internal sealed class DocPrinter
             return;
         }
 
+        // Removing only spaces walks the column straight back; a tab in the run needs a remeasure.
+        _column = tabs
+            ? TextWidth.Measure(_output.ToString(_lineStart, end - _lineStart), 0, _options.IndentSize)
+            : _column - (_output.Length - end);
+
         _output.Length = end;
-        _column = TextWidth.Measure(
-            _output.ToString(_lineStart, end - _lineStart),
-            0,
-            _options.IndentSize
-        );
     }
 
     private readonly record struct Command(Indentation Indent, PrintMode Mode, Doc Doc);

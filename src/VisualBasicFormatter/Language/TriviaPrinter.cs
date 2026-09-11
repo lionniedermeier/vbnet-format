@@ -22,6 +22,14 @@ internal static class TriviaPrinter
     public static Doc Leading(SyntaxToken token, FormatContext context)
     {
         var trivia = token.LeadingTrivia;
+
+        // The overwhelmingly common case: indentation and blank lines only, nothing to print above
+        // the token. Answered without allocating a builder.
+        if (!HasPrintableTrivia(trivia))
+        {
+            return Doc.Nothing;
+        }
+
         var parts = ImmutableArray.CreateBuilder<Doc>();
         var blankLines = 0;
         var written = false;
@@ -73,8 +81,13 @@ internal static class TriviaPrinter
     /// </summary>
     public static Doc Trailing(SyntaxToken token, FormatContext context)
     {
+        if (token.TrailingTrivia.Count == 0)
+        {
+            return Doc.Nothing;
+        }
+
         var parts = ImmutableArray.CreateBuilder<Doc>();
-        var expands = HasCodeBehind(token);
+        bool? expands = null;
 
         foreach (var trivia in token.TrailingTrivia)
         {
@@ -85,7 +98,7 @@ internal static class TriviaPrinter
 
             parts.Add(Doc.LineSuffix(Doc.Concat(Doc.Space, content)));
 
-            if (expands)
+            if (expands ??= HasCodeBehind(token))
             {
                 parts.Add(Doc.ExpandParent);
             }
@@ -101,6 +114,25 @@ internal static class TriviaPrinter
     private static bool HasCodeBehind(SyntaxToken token) =>
         token.Parent?.FirstAncestorOrSelf<StatementSyntax>() is not { } statement
         || statement.GetLastToken() != token;
+
+    /// <summary>Whether any trivium would print something -- a comment, a directive, disabled text.</summary>
+    private static bool HasPrintableTrivia(SyntaxTriviaList trivia)
+    {
+        foreach (var trivium in trivia)
+        {
+            if (
+                trivium.IsDirective
+                || trivium.IsKind(SyntaxKind.CommentTrivia)
+                || trivium.IsKind(SyntaxKind.DocumentationCommentTrivia)
+                || trivium.IsKind(SyntaxKind.DisabledTextTrivia)
+            )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>How many blank lines the author left above <paramref name="token"/>.</summary>
     public static int BlankLinesBefore(SyntaxToken token)
@@ -135,11 +167,21 @@ internal static class TriviaPrinter
     /// text carry their own line ending, so an end of line behind one starts an empty line just as
     /// an end of line behind an end of line does.
     /// </summary>
-    private static bool IsBlankLine(SyntaxTriviaList trivia, int index) =>
-        index == 0
-        || trivia[index - 1].IsKind(SyntaxKind.WhitespaceTrivia)
-        || trivia[index - 1].IsKind(SyntaxKind.EndOfLineTrivia)
-        || trivia[index - 1].ToFullString().EndsWith('\n');
+    private static bool IsBlankLine(SyntaxTriviaList trivia, int index)
+    {
+        if (index == 0)
+        {
+            return true;
+        }
+
+        var previous = trivia[index - 1];
+
+        // A directive and a run of disabled text each carry their own trailing line ending.
+        return previous.IsKind(SyntaxKind.WhitespaceTrivia)
+            || previous.IsKind(SyntaxKind.EndOfLineTrivia)
+            || previous.IsDirective
+            || previous.IsKind(SyntaxKind.DisabledTextTrivia);
+    }
 
     /// <summary>
     /// What a trivium contributes, or <c>null</c> when the printer owns it: whitespace and line

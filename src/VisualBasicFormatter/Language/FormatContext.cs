@@ -1,20 +1,29 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.VisualBasic;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language;
 
 /// <summary>
-/// What every formatting rule needs: the options, the line ending, and the source text the tree was
-/// parsed from -- the latter only to read original columns, never to copy formatting decisions.
+/// What every formatting rule needs: the options, the line ending, and a couple of read-only queries
+/// over the tree -- never a place to copy the author's formatting decisions from.
 /// </summary>
 internal sealed class FormatContext
 {
-    public FormatContext(FormatterOptions options, SourceText text, string newLine)
+    private readonly Lazy<SourceText> _text;
+
+    // Ascending start offsets of the tokens whose leading trivia carries a comment, a documentation
+    // comment or a directive. Built once; MustPrintVerbatim binary-searches it.
+    private readonly int[] _contentTriviaStarts;
+
+    public FormatContext(FormatterOptions options, SyntaxNode root, string newLine)
     {
         Options = options;
-        Text = text;
         NewLine = newLine;
+
+        _text = new Lazy<SourceText>(() => root.SyntaxTree.GetText());
+        _contentTriviaStarts = ContentTriviaStarts(root);
 
         PrintOptions = new PrintOptions
         {
@@ -28,8 +37,11 @@ internal sealed class FormatContext
     /// <summary>The user's configuration.</summary>
     public FormatterOptions Options { get; }
 
-    /// <summary>The text the tree was parsed from.</summary>
-    public SourceText Text { get; }
+    /// <summary>
+    /// The source text the tree came from. Materialised on first use -- after the imports have been
+    /// reorganised the tree is detached, and asking for its text rebuilds the whole file.
+    /// </summary>
+    public SourceText Text => _text.Value;
 
     /// <summary>Line ending of the output.</summary>
     public string NewLine { get; }
@@ -41,12 +53,63 @@ internal sealed class FormatContext
     /// A token with the comments that hang on it. The whitespace that separated it from its
     /// neighbours is deliberately not emitted: spacing is the rule's decision, not the input's.
     /// </summary>
-    public Doc Token(SyntaxToken token) =>
-        Doc.Concat(
-            TriviaPrinter.Leading(token, this),
-            Doc.Text(token.Text),
-            TriviaPrinter.Trailing(token, this)
-        );
+    public Doc Token(SyntaxToken token)
+    {
+        var text = TokenText(token);
+
+        var leading = token.HasLeadingTrivia ? TriviaPrinter.Leading(token, this) : Doc.Nothing;
+        var trailing = token.HasTrailingTrivia ? TriviaPrinter.Trailing(token, this) : Doc.Nothing;
+
+        // Whitespace-only trivia -- an indent -- prints nothing, so most tokens land here.
+        if (leading is DocNothing && trailing is DocNothing)
+        {
+            return text;
+        }
+
+        return Doc.Concat(Doc.Concat(leading, text), trailing);
+    }
+
+    // Keywords and punctuation are a closed set with a fixed spelling, so their doc node is built
+    // once and shared. Identifiers and literals carry their own text and fall through.
+    private static readonly Doc?[] InternedText = BuildInternedText();
+
+    private static Doc TokenText(SyntaxToken token)
+    {
+        var kind = (int)token.Kind();
+
+        if (
+            (uint)kind < (uint)InternedText.Length
+            && InternedText[kind] is { } interned
+            && token.Text == SyntaxFacts.GetText(token.Kind())
+        )
+        {
+            return interned;
+        }
+
+        return Doc.Text(token.Text);
+    }
+
+    private static Doc?[] BuildInternedText()
+    {
+        var kinds = Enum.GetValues<SyntaxKind>();
+        var max = 0;
+        foreach (var kind in kinds)
+        {
+            max = Math.Max(max, (int)kind);
+        }
+
+        var table = new Doc?[max + 1];
+        foreach (var kind in kinds)
+        {
+            var text = SyntaxFacts.GetText(kind);
+            if (text.Length > 0)
+            {
+                table[(int)kind] = Doc.Text(text);
+            }
+        }
+
+        return table;
+    }
 
     /// <summary>
     /// A break the language permits behind <paramref name="token"/>, rendered as a space while the
@@ -63,11 +126,79 @@ internal sealed class FormatContext
     public bool EndsItsLine(SyntaxToken token)
     {
         var next = token.GetNextToken();
+        if (next == default)
+        {
+            return false;
+        }
 
-        return next != default
-            && Text.Lines.GetLinePosition(token.Span.End).Line
-                < Text.Lines.GetLinePosition(next.SpanStart).Line;
+        foreach (var trivia in token.TrailingTrivia)
+        {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                return true;
+            }
+        }
+
+        foreach (var trivia in next.LeadingTrivia)
+        {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                return true;
+            }
+
+            if (!trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+            {
+                break;
+            }
+        }
+
+        return false;
     }
+
+    /// <summary>
+    /// Whether a comment, a documentation comment or a directive sits above a token inside
+    /// <paramref name="node"/> -- its own leading trivia excluded, since that is printed above the
+    /// node either way. Such a node is reproduced verbatim rather than taken apart, so that the
+    /// comment does not move onto the wrong line.
+    /// </summary>
+    public bool MustPrintVerbatim(SyntaxNode node)
+    {
+        var span = node.Span;
+
+        var index = Array.BinarySearch(_contentTriviaStarts, span.Start + 1);
+        if (index < 0)
+        {
+            index = ~index;
+        }
+
+        return index < _contentTriviaStarts.Length && _contentTriviaStarts[index] < span.End;
+    }
+
+    private static int[] ContentTriviaStarts(SyntaxNode root)
+    {
+        var starts = new List<int>();
+
+        // DescendantTokens yields in source order, so the offsets come out ascending.
+        foreach (var token in root.DescendantTokens())
+        {
+            foreach (var trivia in token.LeadingTrivia)
+            {
+                if (IsContentTrivia(trivia))
+                {
+                    starts.Add(token.SpanStart);
+                    break;
+                }
+            }
+        }
+
+        return [.. starts];
+    }
+
+    private static bool IsContentTrivia(SyntaxTrivia trivia) =>
+        trivia.IsDirective
+        || trivia.IsKind(SyntaxKind.CommentTrivia)
+        || trivia.IsKind(SyntaxKind.DocumentationCommentTrivia)
+        || trivia.IsKind(SyntaxKind.DisabledTextTrivia);
 
     public Doc HardBreakAfter(SyntaxToken token) =>
         ContinuationPoints.IsImplicitAfter(token) ? Doc.HardLine : Doc.Space;
@@ -110,12 +241,17 @@ internal sealed class FormatContext
     public Doc XmlTagBreak(bool broken) => broken ? Doc.HardLine : Doc.Space;
 
     /// <summary>
-    /// What stands between two neighbours: the spacing the pre-pass left, and nothing else. A break
-    /// here is never on offer -- the rules obtain theirs from the methods above, which is what keeps
-    /// one out of a position VB does not continue at.
+    /// What stands between two neighbours: a single space, or nothing where VB is written tight --
+    /// see <see cref="Spacing"/>. A break here is never on offer; the rules obtain theirs from the
+    /// methods above, which is what keeps one out of a position VB does not continue at.
     /// </summary>
-    /// <param name="spaced">Whether anything stood between the two.</param>
-    public Doc Gap(bool spaced) => spaced ? Doc.Space : Doc.Nothing;
+    public Doc Gap(SyntaxNodeOrToken previous, SyntaxNodeOrToken next) =>
+        Spacing.Required(
+            previous.IsToken ? previous.AsToken() : previous.AsNode()!.GetLastToken(),
+            next.IsToken ? next.AsToken() : next.AsNode()!.GetFirstToken()
+        )
+            ? Doc.Space
+            : Doc.Nothing;
 
     /// <summary>The line break between two statements, blank when the author left a blank line.</summary>
     public Doc Separator(SyntaxNode node) => Separator(node.GetFirstToken());

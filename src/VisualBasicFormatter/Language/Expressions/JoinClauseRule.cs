@@ -23,7 +23,7 @@ internal static class JoinClauseRule
 
         // Malformed source may have no On to split at, and a comment inside has nowhere to go once
         // the clause is taken apart. Either way the fallback prints it as it stands.
-        if (on < 0 || StructuralFallback.MustPrintVerbatim(node))
+        if (on < 0 || context.MustPrintVerbatim(node))
         {
             return StructuralFallback.Format(node, visitor, context);
         }

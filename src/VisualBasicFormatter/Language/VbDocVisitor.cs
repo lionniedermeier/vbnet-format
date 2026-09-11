@@ -37,7 +37,7 @@ internal sealed partial class VbDocVisitor : VisualBasicSyntaxVisitor<Doc>
         // A comment inside an expression has nowhere else to go, so that expression is reproduced
         // rather than rebuilt. Statements are exempt: their comments sit above whole lines, which
         // the block rules place correctly.
-        if (node is ExpressionSyntax && StructuralFallback.MustPrintVerbatim(node))
+        if (node is ExpressionSyntax && _context.MustPrintVerbatim(node))
         {
             return VerbatimFormatter.Format(node, _context);
         }

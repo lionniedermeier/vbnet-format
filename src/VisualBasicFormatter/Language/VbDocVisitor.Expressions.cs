@@ -197,7 +197,7 @@ internal sealed partial class VbDocVisitor
         ?? StructuralFallback.Format(node, this, _context);
 
     public override Doc VisitAssignmentStatement(AssignmentStatementSyntax node) =>
-        !StructuralFallback.MustPrintVerbatim(node)
+        !_context.MustPrintVerbatim(node)
         && AssignmentTail(node.OperatorToken, node.Right) is { } tail
             ? Doc.Concat(Format(node.Left), Doc.Space, tail)
             : StructuralFallback.Format(node, this, _context);

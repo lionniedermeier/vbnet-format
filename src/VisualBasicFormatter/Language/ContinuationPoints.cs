@@ -49,12 +49,9 @@ internal static class ContinuationPoints
     /// <summary>Whether a line may end right behind <paramref name="token"/>.</summary>
     public static bool IsImplicitAfter(SyntaxToken token)
     {
-        if (IsInsideUnbreakable(token))
-        {
-            return false;
-        }
-
-        return token.Kind() switch
+        // The kind test is cheap and rules most tokens out; the ancestor walk only runs for the few
+        // that VB would otherwise continue at.
+        var breakable = token.Kind() switch
         {
             SyntaxKind.CommaToken => true,
             SyntaxKind.OpenParenToken => true,
@@ -69,6 +66,8 @@ internal static class ContinuationPoints
             SyntaxKind.LessThanToken when token.Parent is AttributeListSyntax => false,
             var kind => Operators.Contains(kind),
         };
+
+        return breakable && !IsInsideUnbreakable(token);
     }
 
     /// <summary>

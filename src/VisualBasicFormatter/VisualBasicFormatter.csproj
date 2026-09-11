@@ -8,14 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Brings in Microsoft.CodeAnalysis.VisualBasic (parser, SyntaxFactory) and transitively
-         Microsoft.CodeAnalysis.Workspaces.Common (Formatter, AdhocWorkspace). -->
+    <!-- Brings in Microsoft.CodeAnalysis.VisualBasic: the parser and SyntaxFactory. The formatter
+         owns whitespace itself, so the Workspaces layer (Formatter, AdhocWorkspace) is not referenced. -->
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" />
-    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The IR, the printer and the per-node rules are internal; the tests exercise them directly. -->
+    <!-- The IR, the printer and the per-node rules are internal; the tests and the benchmark
+         exercise them directly. -->
     <InternalsVisibleTo Include="VisualBasicFormatter.Tests" />
+    <InternalsVisibleTo Include="VisualBasicFormatter.Bench" />
   </ItemGroup>
 </Project>

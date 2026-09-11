@@ -7,7 +7,7 @@ internal static class SelectClauseRule
 {
     public static Doc Format(SelectClauseSyntax node, VbDocVisitor visitor, FormatContext context)
     {
-        if (StructuralFallback.MustPrintVerbatim(node))
+        if (context.MustPrintVerbatim(node))
         {
             return StructuralFallback.Format(node, visitor, context);
         }

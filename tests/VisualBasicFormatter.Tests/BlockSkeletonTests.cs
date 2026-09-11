@@ -228,8 +228,11 @@ public sealed class BlockSkeletonTests
         Assert.EndsWith("End Module\r\n", after, StringComparison.Ordinal);
     }
 
-    /// <summary>Runs the spacing pre-pass, then the rule engine on its result.</summary>
-    private static (string Normalized, string Formatted) Format(string source)
+    /// <summary>
+    /// Parses, then runs the rule engine. The first item is the parsed tree as text -- the same
+    /// tokens and comments the engine sees, for the multiset comparisons below to check against.
+    /// </summary>
+    private static (string Parsed, string Formatted) Format(string source)
     {
         var options = new FormatterOptions();
         var newLine = VbFormatter.DetectNewLine(source);
@@ -240,13 +243,9 @@ public sealed class BlockSkeletonTests
         );
         Assert.DoesNotContain(tree.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
 
-        var normalized = VbFormatter.NormalizeWhitespace(
-            (CompilationUnitSyntax)tree.GetRoot(),
-            options,
-            newLine
-        );
+        var root = (CompilationUnitSyntax)tree.GetRoot();
 
-        return (normalized.ToFullString(), DocEngine.Format(normalized, options, newLine));
+        return (root.ToFullString(), DocEngine.Format(root, options, newLine));
     }
 
     private static List<string> Comments(string source) =>

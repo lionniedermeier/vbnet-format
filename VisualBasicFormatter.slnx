@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/VisualBasicFormatter.Bench/VisualBasicFormatter.Bench.csproj" />
     <Project Path="src/VisualBasicFormatter.Cli/VisualBasicFormatter.Cli.csproj" />
     <Project Path="src/VisualBasicFormatter/VisualBasicFormatter.csproj" />
   </Folder>

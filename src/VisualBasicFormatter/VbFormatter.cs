@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Imports;
@@ -13,13 +11,6 @@ namespace VisualBasicFormatter;
 /// <summary>Formats VB.NET source: orders imports, normalizes whitespace, wraps long lines.</summary>
 public static class VbFormatter
 {
-    // Roslyn only applies an .editorconfig when the project and the document carry paths under the
-    // same directory. These files exist in memory only.
-    private static readonly string VirtualDirectory = Path.Combine(
-        Path.GetTempPath(),
-        "vbnet-format-inmemory"
-    );
-
     /// <summary>Formats <paramref name="source"/>.</summary>
     /// <param name="source">VB.NET source text.</param>
     /// <param name="options">Configuration; <c>null</c> uses the defaults.</param>
@@ -30,13 +21,14 @@ public static class VbFormatter
         var parseOptions = new VisualBasicParseOptions(options.LanguageVersion);
 
         var tree = VisualBasicSyntaxTree.ParseText(source, parseOptions);
-        var errors = tree.GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error)
-            .ToImmutableArray();
 
         // Never rewrite source that does not parse.
-        if (errors.Length > 0)
+        if (tree.GetDiagnostics().Any(d => d.Severity == DiagnosticSeverity.Error))
         {
+            var errors = tree.GetDiagnostics()
+                .Where(d => d.Severity == DiagnosticSeverity.Error)
+                .ToImmutableArray();
+
             return new FormatResult(source, Changed: false, errors);
         }
 
@@ -48,68 +40,20 @@ public static class VbFormatter
             root = ImportsOrganizer.Organize(root, newLine);
         }
 
-        root = NormalizeWhitespace(root, options, newLine);
-
         var printed = DocEngine.Format(root, options, newLine);
+
+        // Nothing was rewritten, so there is nothing to verify.
+        if (printed == source)
+        {
+            return new FormatResult(source, Changed: false, []);
+        }
 
         if (VerifyEquivalence(original, printed, parseOptions) is { } failure)
         {
             return new FormatResult(source, Changed: false, [failure]);
         }
 
-        return new FormatResult(printed, printed != source, []);
-    }
-
-    /// <summary>Normalizes indentation and spacing. Inserts no line breaks of its own.</summary>
-    internal static CompilationUnitSyntax NormalizeWhitespace(
-        CompilationUnitSyntax root,
-        FormatterOptions options,
-        string newLine
-    )
-    {
-        var editorConfig = string.Join(
-            newLine,
-            "root = true",
-            string.Empty,
-            "[*.vb]",
-            $"indent_style = {(options.UseTabs ? "tab" : "space")}",
-            $"indent_size = {options.IndentSize}",
-            $"tab_width = {options.IndentSize}",
-            $"end_of_line = {(newLine == "\r\n" ? "crlf" : "lf")}"
-        );
-
-        using var workspace = new AdhocWorkspace();
-
-        var project = workspace
-            .AddProject(
-                ProjectInfo.Create(
-                    ProjectId.CreateNewId(),
-                    VersionStamp.Default,
-                    name: "VbNetFormat",
-                    assemblyName: "VbNetFormat",
-                    language: LanguageNames.VisualBasic,
-                    filePath: Path.Combine(VirtualDirectory, "VbNetFormat.vbproj")
-                )
-            )
-            .AddAnalyzerConfigDocument(
-                ".editorconfig",
-                SourceText.From(editorConfig),
-                filePath: Path.Combine(VirtualDirectory, ".editorconfig")
-            )
-            .Project;
-
-        var document = project.AddDocument(
-            "Source.vb",
-            SourceText.From(root.ToFullString()),
-            filePath: Path.Combine(VirtualDirectory, "Source.vb")
-        );
-
-        var formatted = Formatter
-            .FormatAsync(document, options: null, CancellationToken.None)
-            .GetAwaiter()
-            .GetResult();
-
-        return (CompilationUnitSyntax)formatted.GetSyntaxRootAsync().GetAwaiter().GetResult()!;
+        return new FormatResult(printed, Changed: true, []);
     }
 
     /// <summary>
@@ -142,9 +86,12 @@ public static class VbFormatter
             return Failure("Formatting changed or lost imports.");
         }
 
+        var originalBody = Body(original);
+        var resultBody = Body(result);
+
         if (
-            !Body(original).IsEquivalentTo(Body(result), topLevel: false)
-            && !StructurallyIdentical(Body(original), Body(result))
+            !originalBody.IsEquivalentTo(resultBody, topLevel: false)
+            && !StructurallyIdentical(originalBody, resultBody)
         )
         {
             return Failure("Formatting changed the code.");

@@ -16,7 +16,7 @@ internal static class QueryAssignmentRule
         if (
             value is not QueryExpressionSyntax query
             || !ContinuationPoints.IsImplicitAfter(op)
-            || StructuralFallback.MustPrintVerbatim(query)
+            || context.MustPrintVerbatim(query)
         )
         {
             return null;

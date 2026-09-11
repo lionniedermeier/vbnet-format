@@ -19,7 +19,7 @@ internal static class ConcatAssignmentRule
             || !binary.OperatorToken.IsKind(SyntaxKind.AmpersandToken)
             || !BinaryExpressionRule.IsRunHead(binary)
             || !ContinuationPoints.IsImplicitAfter(op)
-            || StructuralFallback.MustPrintVerbatim(binary)
+            || context.MustPrintVerbatim(binary)
         )
         {
             return null;

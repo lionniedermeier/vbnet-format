@@ -47,7 +47,15 @@ internal sealed class DocConcat : Doc
     internal DocConcat(ImmutableArray<Doc> parts)
     {
         Parts = parts;
-        Expands = parts.Any(p => p.Expands);
+
+        foreach (var part in parts)
+        {
+            if (part.Expands)
+            {
+                Expands = true;
+                break;
+            }
+        }
     }
 
     internal ImmutableArray<Doc> Parts { get; }

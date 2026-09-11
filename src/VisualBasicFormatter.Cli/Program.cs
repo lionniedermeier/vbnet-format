@@ -405,6 +405,7 @@ internal static class Program
         var unchanged = 0;
         var runStart = Stopwatch.GetTimestamp();
 
+        // TODO: parallelize this loop
         foreach (var file in files)
         {
             var fileStart = Stopwatch.GetTimestamp();

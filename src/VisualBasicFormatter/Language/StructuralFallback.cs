@@ -1,14 +1,13 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.VisualBasic;
 using VisualBasicFormatter.Language.Declarations;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language;
 
 /// <summary>
-/// What a node kind without a rule of its own does: print its children in order, keeping the spacing
-/// the pre-pass settled on, and offer no break of its own.
+/// What a node kind without a rule of its own does: print its children in order, spaced by
+/// <see cref="Spacing"/>, and offer no break of its own.
 /// </summary>
 /// <remarks>
 /// This is what makes the migration incremental. A rule authored for one node kind takes effect
@@ -21,36 +20,53 @@ internal static class StructuralFallback
     public static Doc Format(SyntaxNode node, VbDocVisitor visitor, FormatContext context)
     {
         // Taking the node apart would move a comment onto the wrong line, so keep it as it stands.
-        if (MustPrintVerbatim(node))
+        if (context.MustPrintVerbatim(node))
         {
             return VerbatimFormatter.Format(node, context);
         }
 
         var children = node.ChildNodesAndTokens();
-        var parts = ImmutableArray.CreateBuilder<Doc>();
+        var count = children.Count;
 
-        for (var i = 0; i < children.Count; i++)
+        if (count == 0)
+        {
+            return Doc.Nothing;
+        }
+
+        // One doc per child, plus one gap between each pair. Empty parts (a no-space gap, an absent
+        // optional child) are left out here so the concat never has to filter them.
+        var parts = ImmutableArray.CreateBuilder<Doc>(2 * count - 1);
+
+        for (var i = 0; i < count; i++)
         {
             var child = children[i];
-            parts.Add(
-                child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken())
-            );
+            Add(parts, child.IsNode ? visitor.Format(child.AsNode()) : context.Token(child.AsToken()));
 
-            if (i + 1 < children.Count)
+            if (i + 1 < count)
             {
                 var next = children[i + 1];
 
                 // Whatever stood between the two -- a space, a line break, an underscore
-                // continuation -- collapses; the breaks are re-decided from scratch. An attribute
-                // list is the one boundary that ends its line rather than merely separating.
-                parts.Add(
-                    AttributePlacementRule.Break(child, next, context)
-                        ?? context.Gap(next.SpanStart > child.Span.End)
-                );
+                // continuation -- is dropped and the spacing re-decided from the two tokens. An
+                // attribute list is the one boundary that ends its line rather than merely separating.
+                Add(parts, AttributePlacementRule.Break(child, next, context) ?? context.Gap(child, next));
             }
         }
 
-        return Doc.Concat(parts.DrainToImmutable());
+        return parts.Count switch
+        {
+            0 => Doc.Nothing,
+            1 => parts[0],
+            _ => Doc.Concat(parts.DrainToImmutable()),
+        };
+
+        static void Add(ImmutableArray<Doc>.Builder parts, Doc part)
+        {
+            if (part is not DocNothing)
+            {
+                parts.Add(part);
+            }
+        }
     }
 
     /// <summary>A consecutive run of children, spaced the way <see cref="Format"/> spaces them.</summary>
@@ -67,7 +83,7 @@ internal static class StructuralFallback
         {
             if (previous is { } behind)
             {
-                parts.Add(context.Gap(child.SpanStart > behind.Span.End));
+                parts.Add(context.Gap(behind, child));
             }
 
             parts.Add(
@@ -79,29 +95,4 @@ internal static class StructuralFallback
         return Doc.Concat(parts.DrainToImmutable());
     }
 
-    /// <summary>
-    /// Whether a comment, a documentation comment or a directive sits above a token inside
-    /// <paramref name="node"/>. Its own leading trivia does not count -- that one is printed above
-    /// the node either way.
-    /// </summary>
-    public static bool MustPrintVerbatim(SyntaxNode node)
-    {
-        var first = node.GetFirstToken();
-
-        foreach (var token in node.DescendantTokens())
-        {
-            if (token != first && token.LeadingTrivia.Any(IsContent))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsContent(SyntaxTrivia trivia) =>
-        trivia.IsDirective
-        || trivia.IsKind(SyntaxKind.CommentTrivia)
-        || trivia.IsKind(SyntaxKind.DocumentationCommentTrivia)
-        || trivia.IsKind(SyntaxKind.DisabledTextTrivia);
 }

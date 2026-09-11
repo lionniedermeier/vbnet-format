@@ -40,7 +40,32 @@ internal abstract class Doc
     public static Doc Text(string text) => text.Length == 0 ? Nothing : new DocText(text);
 
     /// <summary>A sequence. Empty parts are dropped, so rules can return <see cref="Nothing"/> freely.</summary>
-    public static Doc Concat(params Doc[] parts) => Concat(ImmutableArray.Create(parts));
+    /// <remarks>
+    /// The <see langword="params"/> array is freshly allocated by the compiler at every call site and
+    /// never aliased, so it is adopted as the backing store rather than copied.
+    /// </remarks>
+    public static Doc Concat(params Doc[] parts) =>
+        Concat(System.Runtime.InteropServices.ImmutableCollectionsMarshal.AsImmutableArray(parts));
+
+    /// <summary>Two parts, without allocating an array when one of them is <see cref="Nothing"/>.</summary>
+    public static Doc Concat(Doc first, Doc second)
+    {
+        if (first is DocNothing)
+        {
+            return second;
+        }
+
+        if (second is DocNothing)
+        {
+            return first;
+        }
+
+        return new DocConcat(ImmutableArray.Create(first, second));
+    }
+
+    /// <inheritdoc cref="Concat(Doc, Doc)"/>
+    public static Doc Concat(Doc first, Doc second, Doc third) =>
+        Concat(ImmutableArray.Create(first, second, third));
 
     /// <inheritdoc cref="Concat(Doc[])"/>
     public static Doc Concat(IEnumerable<Doc> parts) => Concat(parts.ToImmutableArray());
@@ -48,14 +73,43 @@ internal abstract class Doc
     /// <inheritdoc cref="Concat(Doc[])"/>
     public static Doc Concat(ImmutableArray<Doc> parts)
     {
-        var kept = parts.Where(p => p is not DocNothing).ToImmutableArray();
-
-        return kept.Length switch
+        var dropped = 0;
+        foreach (var part in parts)
         {
-            0 => Nothing,
-            1 => kept[0],
-            _ => new DocConcat(kept),
-        };
+            if (part is DocNothing)
+            {
+                dropped++;
+            }
+        }
+
+        // Nothing to drop: hand the array straight through.
+        if (dropped == 0)
+        {
+            return parts.Length switch
+            {
+                0 => Nothing,
+                1 => parts[0],
+                _ => new DocConcat(parts),
+            };
+        }
+
+        var kept = parts.Length - dropped;
+        if (kept == 0)
+        {
+            return Nothing;
+        }
+
+        var builder = ImmutableArray.CreateBuilder<Doc>(kept);
+        foreach (var part in parts)
+        {
+            if (part is not DocNothing)
+            {
+                builder.Add(part);
+            }
+        }
+
+        var result = builder.MoveToImmutable();
+        return result.Length == 1 ? result[0] : new DocConcat(result);
     }
 
     /// <summary>The flat-or-broken decision unit.</summary>

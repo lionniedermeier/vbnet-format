@@ -13,6 +13,6 @@ internal static class CaseStatementRule
         Doc.Concat(
             context.Token(node.CaseKeyword),
             Doc.Space,
-            VbDocBuilder.Run(node.Cases, visitor, context)
+            Doc.Indent(VbDocBuilder.Run(node.Cases, visitor, context))
         );
 }

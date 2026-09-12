@@ -3,12 +3,12 @@ Module CaseClauses
     Public Function Describe(ByVal feature As Feature) As Boolean
         Select Case feature
             Case Feature.AutoProperties,
-                Feature.LineContinuation,
-                Feature.StatementLambdas,
-                Feature.CoContraVariance,
-                Feature.CollectionInitializers,
-                Feature.SubLambdas,
-                Feature.ArrayLiterals
+                    Feature.LineContinuation,
+                    Feature.StatementLambdas,
+                    Feature.CoContraVariance,
+                    Feature.CollectionInitializers,
+                    Feature.SubLambdas,
+                    Feature.ArrayLiterals
                 Return True
             Case Feature.AutoProperties, Feature.LineContinuation
                 Return True

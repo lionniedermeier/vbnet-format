@@ -190,7 +190,7 @@ internal sealed partial class VbDocVisitor
 
     /// <inheritdoc/>
     public override Doc VisitCaseBlock(CaseBlockSyntax node) =>
-        Doc.Concat(Format(node.CaseStatement), BlockRule.Body(node.Statements, this, _context));
+        CaseBlockRule.Format(node, this, _context);
 
     /// <inheritdoc/>
     public override Doc VisitCaseStatement(CaseStatementSyntax node) =>

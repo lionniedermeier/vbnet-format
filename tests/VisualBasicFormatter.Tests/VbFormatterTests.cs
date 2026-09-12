@@ -806,6 +806,57 @@ public sealed class VbFormatterTests
     }
 
     [Fact]
+    public void DoubleIndentsWrappedCaseClausesBelowTheCaseBody()
+    {
+        var lines = Lines("CaseClauses");
+
+        var head = Array.FindIndex(lines, l => l.Trim() == "Case Feature.AutoProperties,");
+
+        Assert.True(head >= 0);
+        Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
+        Assert.Equal("Feature.LineContinuation,", lines[head + 1].TrimStart());
+
+        var body = Array.FindIndex(lines, head, l => l.Trim() == "Return True");
+        Assert.True(body >= 0);
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[body]));
+    }
+
+    [Fact]
+    public void KeepsAnAuthorWrittenColonInASelectCase()
+    {
+        var lines = Lines("SelectCaseInline");
+
+        Assert.Contains(lines, l => l.Trim() == "Case 0 : Return \"\"");
+        Assert.Contains(lines, l => l.Trim() == "Case 3 : Return \"            \"");
+        Assert.Contains(lines, l => l.Trim() == "Case Else : Return \"other\"");
+    }
+
+    [Fact]
+    public void DoesNotJoinACaseWrittenOverTwoLines()
+    {
+        var lines = Lines("SelectCaseInline");
+
+        var head = Array.FindIndex(lines, l => l.Trim() == "Case 0");
+        Assert.True(head >= 0);
+        Assert.Equal("Return \"\"", lines[head + 1].Trim());
+    }
+
+    [Fact]
+    public void WrapsAnOverlongInlineCaseToItsOwnLine()
+    {
+        var lines = Lines("SelectCaseInline");
+
+        Assert.Contains(
+            lines,
+            l => l.TrimStart().StartsWith("Return \"SomeVery", StringComparison.Ordinal)
+        );
+        Assert.DoesNotContain(
+            lines,
+            l => l.Contains(" : Return \"SomeVery", StringComparison.Ordinal)
+        );
+    }
+
+    [Fact]
     public void DoesNotWrapAFittingLineForATrailingComment()
     {
         var lines = Lines("TrailingComments");

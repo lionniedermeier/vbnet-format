@@ -2,7 +2,11 @@
 
 An opinionated VB.NET source formatter built on Roslyn.
 
-Roslyn's own `Formatter` normalizes indentation and spacing but never introduces a line break, so long lines and long `Sub`/`Function` signatures stay long. vbnet-format wraps them, breaking only where VB already continues a line so that no `_` is ever written. It also sorts, de-duplicates and groups `Imports`.
+> [!WARNING]
+> **Proof of concept.** This project is not production ready and comes with
+> no stability guarantees. Large parts of it were written with the help of Claude Code.
+
+Roslyn's own `Formatter` normalizes indentation and spacing but never introduces a line break. vbnet-format wraps them, breaking only where VB already continues a line so that no `_` is ever written. It also sorts, de-duplicates and groups `Imports`.
 
 ## Command Line Usage
 

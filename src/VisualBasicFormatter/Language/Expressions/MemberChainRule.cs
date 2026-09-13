@@ -40,7 +40,7 @@ internal static class MemberChainRule
         var dots = new SyntaxToken[count];
         var index = count - 1;
 
-        for (ExpressionSyntax? current = node; current is not null; )
+        for (ExpressionSyntax? current = node; current is not null;)
         {
             switch (current)
             {
@@ -76,7 +76,7 @@ internal static class MemberChainRule
     {
         var count = 0;
 
-        for (ExpressionSyntax? current = node; current is not null; )
+        for (ExpressionSyntax? current = node; current is not null;)
         {
             switch (current)
             {

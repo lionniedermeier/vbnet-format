@@ -42,9 +42,7 @@ public static class ImportsOrganizer
                 continue;
             }
 
-            List<SyntaxTrivia> header = headerTaken
-                ? []
-                : ExtractFileHeader(segment.Statements[0]);
+            List<SyntaxTrivia> header = headerTaken ? [] : ExtractFileHeader(segment.Statements[0]);
             headerTaken = true;
             statements.AddRange(Sorted(segment.Statements, header, newLine));
         }
@@ -52,7 +50,10 @@ public static class ImportsOrganizer
         return root.WithImports(SyntaxFactory.List(statements));
     }
 
-    private readonly record struct Segment(bool IsVerbatim, List<ImportsStatementSyntax> Statements);
+    private readonly record struct Segment(
+        bool IsVerbatim,
+        List<ImportsStatementSyntax> Statements
+    );
 
     private static IEnumerable<Segment> Segments(SyntaxList<ImportsStatementSyntax> imports)
     {

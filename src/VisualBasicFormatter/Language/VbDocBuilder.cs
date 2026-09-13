@@ -72,7 +72,11 @@ internal static class VbDocBuilder
         );
     }
 
-    public static Doc Run<T>(SeparatedSyntaxList<T> list, VbDocVisitor visitor, FormatContext context)
+    public static Doc Run<T>(
+        SeparatedSyntaxList<T> list,
+        VbDocVisitor visitor,
+        FormatContext context
+    )
         where T : SyntaxNode
     {
         var (elements, separators) = ToArrays(list, visitor);

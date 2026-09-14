@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>vbnet-format</AssemblyName>
+    <AssemblyName>vbfmt</AssemblyName>
     <RootNamespace>VisualBasicFormatter.Cli</RootNamespace>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <!-- Only meaningful for an executable. The formatter itself sorts with OrdinalIgnoreCase, so
@@ -11,10 +11,10 @@
 
   <PropertyGroup Label="Tool package">
     <PackAsTool>true</PackAsTool>
-    <!-- Package id and command are the same string, so `dotnet tool install vbnet-format` puts a
-         `vbnet-format` on the PATH. Neither may be renamed once a version is on nuget.org. -->
-    <PackageId>vbnet-format</PackageId>
-    <ToolCommandName>vbnet-format</ToolCommandName>
+    <!-- Package id and command are the same string, so `dotnet tool install vbfmt` puts a
+         `vbfmt` on the PATH. Neither may be renamed once a version is on nuget.org. -->
+    <PackageId>vbfmt</PackageId>
+    <ToolCommandName>vbfmt</ToolCommandName>
     <Description>An opinionated VB.NET source formatter built on Roslyn. Wraps long lines and long Sub/Function signatures, breaking only where VB continues a line on its own, and sorts, de-duplicates and groups Imports.</Description>
     <!-- The tool targets net10.0; this lets it keep running on a machine that has moved on to a
          later major runtime without waiting for a rebuild. -->

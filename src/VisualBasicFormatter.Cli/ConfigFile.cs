@@ -5,7 +5,7 @@ using VisualBasicFormatter;
 
 namespace VisualBasicFormatter.Cli;
 
-/// <summary>The contents of a <c>.vbnet-format.json</c>. Unset values keep their default.</summary>
+/// <summary>The contents of a <c>.vbfmtrc</c>. Unset values keep their default.</summary>
 internal sealed record ConfigFile
 {
     public int? MaxLineLength { get; init; }

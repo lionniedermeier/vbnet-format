@@ -212,7 +212,7 @@ public sealed class VbFormatterTests
 
     /// <summary>
     /// Every break is an implicit continuation, so no underscore may ever be emitted -- the explicit
-    /// <c>_</c> is not something vbnet-format writes at all.
+    /// <c>_</c> is not something vbfmt writes at all.
     /// </summary>
     [Theory]
     [MemberData(nameof(TestCases.Names), MemberType = typeof(TestCases))]

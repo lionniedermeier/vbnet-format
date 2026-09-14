@@ -10,11 +10,11 @@ public sealed class ConfigInitTests : IDisposable
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
-        "vbnet-format-tests",
+        "vbfmt-tests",
         Guid.NewGuid().ToString("n")
     );
 
-    private string ConfigPath => Path.Combine(_root, ".vbnet-format.json");
+    private string ConfigPath => Path.Combine(_root, ".vbfmtrc");
 
     public ConfigInitTests() => Directory.CreateDirectory(_root);
 

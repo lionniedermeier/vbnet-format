@@ -12,7 +12,16 @@ internal static class Program
     private const int ExitWouldChange = 1;
     private const int ExitError = 2;
 
-    private const string ConfigFileName = ".vbnet-format.json";
+    private const string DefaultConfigFileName = ".vbfmtrc";
+
+    private static readonly string[] ConfigFileNames =
+    [
+        ".vbfmtrc",
+        ".vbfmtrc.json",
+        "vbnet-format.json",
+        "vbnetformatrc",
+        "vbnetformatrc.json",
+    ];
 
     private static readonly string[] IgnoreFileNames =
     [
@@ -110,7 +119,8 @@ internal static class Program
 
         var config = new Option<FileInfo?>("--config")
         {
-            Description = $"Path to a {ConfigFileName}.",
+            Description =
+                $"Path to a config file. Without it, {string.Join(", ", ConfigFileNames)} are searched for, walking up from the working directory.",
         };
 
         var ignorePath = new Option<string[]>("--ignore-path")
@@ -132,19 +142,19 @@ internal static class Program
 
         var force = new Option<bool>("--force")
         {
-            Description = $"Overwrite an existing {ConfigFileName}.",
+            Description = $"Overwrite an existing {DefaultConfigFileName}.",
         };
 
         var init = new Command(
             "init",
-            $"Write a {ConfigFileName} with the default options into the working directory."
+            $"Write a {DefaultConfigFileName} with the default options into the working directory."
         );
         init.Options.Add(force);
         init.SetAction(result =>
             Guarded(() => RunInit(Directory.GetCurrentDirectory(), result.GetValue(force)))
         );
 
-        var root = new RootCommand("vbnet-format - a formatter for VB.NET source.");
+        var root = new RootCommand("vbfmt - a formatter for VB.NET source.");
         root.Subcommands.Add(init);
         root.Arguments.Add(paths);
         Option[] all =
@@ -181,7 +191,7 @@ internal static class Program
                 )
                 {
                     Console.Error.WriteLine(
-                        "vbnet-format: --write cannot be combined with --check, --diff or --stdin."
+                        "vbfmt: --write cannot be combined with --check, --diff or --stdin."
                     );
                     return ExitError;
                 }
@@ -230,20 +240,18 @@ internal static class Program
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            Console.Error.WriteLine($"vbnet-format: {ex.Message}");
+            Console.Error.WriteLine($"vbfmt: {ex.Message}");
             return ExitError;
         }
     }
 
     internal static int RunInit(string directory, bool force)
     {
-        var path = Path.Combine(directory, ConfigFileName);
+        var path = Path.Combine(directory, DefaultConfigFileName);
 
         if (File.Exists(path) && !force)
         {
-            Console.Error.WriteLine(
-                $"vbnet-format: {path} already exists. Pass --force to overwrite."
-            );
+            Console.Error.WriteLine($"vbfmt: {path} already exists. Pass --force to overwrite.");
             return ExitError;
         }
 
@@ -315,10 +323,13 @@ internal static class Program
             dir = dir.Parent
         )
         {
-            var candidate = Path.Combine(dir.FullName, ConfigFileName);
-            if (File.Exists(candidate))
+            foreach (var name in ConfigFileNames)
             {
-                return candidate;
+                var candidate = Path.Combine(dir.FullName, name);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
             }
         }
 
@@ -392,11 +403,11 @@ internal static class Program
         {
             if (matched.Count > 0)
             {
-                Console.Error.WriteLine("vbnet-format: all matching .vb files are ignored.");
+                Console.Error.WriteLine("vbfmt: all matching .vb files are ignored.");
                 return ExitOk;
             }
 
-            Console.Error.WriteLine("vbnet-format: no .vb files found.");
+            Console.Error.WriteLine("vbfmt: no .vb files found.");
             return ExitError;
         }
 

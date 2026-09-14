@@ -19,7 +19,7 @@ public enum EndOfLine
 /// Configuration for <see cref="VbFormatter"/>.
 /// </summary>
 /// <remarks>
-/// There are six options, and there is meant to be no seventh: vbnet-format decides the layout
+/// There are six options, and there is meant to be no seventh: vbfmt decides the layout
 /// itself, and every one of these earns its place by affecting correctness, interoperability with
 /// other tooling, or accessibility. See <c>docs/rationale.md</c> for the rule and what it removed.
 /// </remarks>

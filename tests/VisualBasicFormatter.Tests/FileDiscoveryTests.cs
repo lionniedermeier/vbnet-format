@@ -6,7 +6,7 @@ public sealed class FileDiscoveryTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
-        "vbnet-format-tests",
+        "vbfmt-tests",
         Guid.NewGuid().ToString("n")
     );
 

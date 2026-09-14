@@ -208,6 +208,10 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitQueryExpression(QueryExpressionSyntax node) =>
         QueryExpressionRule.Format(node, this, _context);
 
+    public override Doc VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
+        ParenthesizedConditionRule.Format(node, this, _context)
+        ?? StructuralFallback.Format(node, this, _context);
+
     public override Doc VisitEqualsValue(EqualsValueSyntax node) =>
         AssignmentTail(node.EqualsToken, node.Value)
         ?? StructuralFallback.Format(node, this, _context);

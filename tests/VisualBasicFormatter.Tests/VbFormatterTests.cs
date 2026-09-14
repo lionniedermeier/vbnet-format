@@ -806,6 +806,84 @@ public sealed class VbFormatterTests
     }
 
     [Fact]
+    public void BreaksBeforeTheClosingParenOfAWrappedCondition()
+    {
+        var lines = Lines("ParenthesizedConditions");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Trim() == "If (candidate.IsActive AndAlso"
+        );
+
+        Assert.True(head >= 0);
+        var close = Array.FindIndex(lines, head, l => l.Trim() == ") Then");
+
+        Assert.True(close > head);
+        Assert.Equal(Indent(lines[head]), Indent(lines[close]));
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 1]));
+    }
+
+    [Fact]
+    public void OpensAWrappedConditionRatherThanOnlyItsCloser()
+    {
+        var lines = Lines("ParenthesizedConditions");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Trim().StartsWith("ElseIf (", StringComparison.Ordinal)
+        );
+
+        Assert.True(head >= 0);
+        Assert.EndsWith("AndAlso", lines[head].TrimEnd());
+
+        var close = Array.FindIndex(lines, head, l => l.Trim() == ") Then");
+
+        Assert.True(close > head);
+        Assert.Equal(Indent(lines[head]), Indent(lines[close]));
+    }
+
+    [Fact]
+    public void KeepsEveryWrappedConditionWithinTheWidth()
+    {
+        var lines = Lines("ParenthesizedConditions");
+        var limit = new FormatterOptions().MaxLineLength;
+
+        Assert.All(lines, l => Assert.True(l.Length <= limit, l));
+    }
+
+    [Fact]
+    public void LeavesAnUnbreakableConditionLong()
+    {
+        const string Source = """
+            Module M
+
+                Public Function F(ByVal candidate As Contract) As Boolean
+                    If (candidate.ThisSinglePropertyAccessHasNoBreakPointOfItsOwnAndSoOverflowsTheLineRegardlessOfAnythingElse) Then
+                        Return True
+                    End If
+
+                    Return False
+                End Function
+
+            End Module
+
+            """;
+
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
+
+        Assert.Contains(
+            lines,
+            l =>
+                l.Trim()
+                == "If (candidate.ThisSinglePropertyAccessHasNoBreakPointOfItsOwnAndSoOverflowsTheLineRegardlessOfAnythingElse) Then"
+        );
+        Assert.DoesNotContain(lines, l => l.Trim() is ")" or ") Then");
+    }
+
+    [Fact]
     public void DoubleIndentsWrappedCaseClausesBelowTheCaseBody()
     {
         var lines = Lines("CaseClauses");

@@ -794,6 +794,41 @@ public sealed class VbFormatterTests
     }
 
     [Fact]
+    public void DoubleIndentsAWrappedForEachCollectionBelowItsBody()
+    {
+        var lines = Lines("ForEachHeader");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.TrimStart().StartsWith("For Each element In elementStore.", StringComparison.Ordinal)
+        );
+
+        Assert.True(head >= 0);
+        Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
+        Assert.Equal("ResolvePrimaryElements().", lines[head + 1].TrimStart());
+
+        var body = Array.FindIndex(lines, head, l => l.Trim() == "element.Activate()");
+
+        Assert.True(body > head);
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[body]));
+    }
+
+    [Fact]
+    public void LeavesTheNumericForBoundAtASingleIndent()
+    {
+        var lines = Lines("ForEachHeader");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.TrimStart().StartsWith("For i = 0 To elementStore.", StringComparison.Ordinal)
+        );
+
+        Assert.True(head >= 0);
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 1]));
+        Assert.Equal("ResolvePrimaryElements().", lines[head + 1].TrimStart());
+    }
+
+    [Fact]
     public void LeavesABracketedConditionOnTheHeaderColumn()
     {
         var lines = Lines("BlockConditions");

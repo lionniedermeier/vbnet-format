@@ -111,7 +111,7 @@ internal static class BinaryExpressionRule
 
         var run = VbDocBuilder.Run(items.DrainToImmutable(), indent: !isNested);
 
-        return !isNested && BlockHeader.IsCondition(node) ? Doc.Indent(run) : run;
+        return !isNested && BlockHeader.IsHeaderExpression(node) ? Doc.Indent(run) : run;
     }
 
     private static Doc Separator(SyntaxToken op, bool preserved, FormatContext context)

@@ -12,7 +12,7 @@ internal static class ParenthesizedConditionRule
         FormatContext context
     )
     {
-        if (!BlockHeader.IsCondition(node) || context.MustPrintVerbatim(node))
+        if (!BlockHeader.IsHeaderExpression(node) || context.MustPrintVerbatim(node))
         {
             return null;
         }

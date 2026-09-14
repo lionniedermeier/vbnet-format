@@ -5,7 +5,7 @@ namespace VisualBasicFormatter.Language.Statements;
 
 internal static class BlockHeader
 {
-    public static bool IsCondition(SyntaxNode node)
+    public static bool IsHeaderExpression(SyntaxNode node)
     {
         var current = node;
 
@@ -20,6 +20,7 @@ internal static class BlockHeader
             ElseIfStatementSyntax parent => parent.Condition == current,
             WhileStatementSyntax parent => parent.Condition == current,
             WhileOrUntilClauseSyntax parent => parent.Condition == current,
+            ForEachStatementSyntax parent => parent.Expression == current,
             _ => false,
         };
     }

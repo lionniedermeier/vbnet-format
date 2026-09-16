@@ -341,6 +341,49 @@ public sealed class VbFormatterTests
         Assert.Contains(lines, l => l.Trim() == "Sub()");
     }
 
+    [Fact]
+    public void FormatsAroundACommentInABlockArgument()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LambdaBlock"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+        Assert.Contains(lines, l => l.Trim() == "paramA,");
+        Assert.Contains(
+            lines,
+            l => l.Trim() == "' Lambda content with several nested layers that are longer than printWidth"
+        );
+    }
+
+    [Fact]
+    public void HangsALambdaAfterAContinuationPoint()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LambdaBlock"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+
+        var assignment = Array.FindIndex(lines, l => l.Trim() == "Dim handler =");
+        Assert.True(assignment >= 0);
+        Assert.Equal(Indent(lines[assignment]) + 4, Indent(lines[assignment + 1]));
+        Assert.Equal("Function(value As Integer)", lines[assignment + 1].Trim());
+
+        var handler = Array.FindIndex(lines, l => l.Trim() == "AddHandler btn.Click,");
+        Assert.True(handler >= 0);
+        Assert.Equal(Indent(lines[handler]) + 4, Indent(lines[handler + 1]));
+        Assert.Equal("Sub(s, e)", lines[handler + 1].Trim());
+    }
+
+    [Fact]
+    public void KeepsAligningALambdaWithoutAContinuationPoint()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("LambdaBlock"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+        Assert.Contains(lines, l => l.TrimEnd().EndsWith("Return Sub()", StringComparison.Ordinal));
+    }
+
     /// <summary>
     /// A list that breaks first tries every element on one indented line, and only stacks them when
     /// that line does not fit either.

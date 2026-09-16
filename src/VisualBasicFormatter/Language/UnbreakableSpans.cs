@@ -40,30 +40,20 @@ internal sealed class UnbreakableSpans
         return index >= 0 && _depths[index] > 0;
     }
 
-    public static (int[] ContentTriviaStarts, UnbreakableSpans Unbreakable) Build(SyntaxNode root)
+    public static UnbreakableSpans Build(SyntaxNode root)
     {
         var events = new List<(int Position, int Delta)>();
-        var contentStarts = new List<int>();
 
         foreach (var item in root.DescendantNodesAndTokensAndSelf())
         {
             if (item.IsToken)
             {
-                var token = item.AsToken();
-                var recordedContent = false;
-
-                foreach (var trivia in token.LeadingTrivia)
+                foreach (var trivia in item.AsToken().LeadingTrivia)
                 {
                     if (trivia.IsDirective)
                     {
                         events.Add((trivia.SpanStart, 1));
                         events.Add((trivia.Span.End, -1));
-                    }
-
-                    if (!recordedContent && IsContentTrivia(trivia))
-                    {
-                        contentStarts.Add(token.SpanStart);
-                        recordedContent = true;
                     }
                 }
 
@@ -90,14 +80,8 @@ internal sealed class UnbreakableSpans
             }
         }
 
-        return ([.. contentStarts], BuildIndex(events));
+        return BuildIndex(events);
     }
-
-    private static bool IsContentTrivia(SyntaxTrivia trivia) =>
-        trivia.IsDirective
-        || trivia.IsKind(SyntaxKind.CommentTrivia)
-        || trivia.IsKind(SyntaxKind.DocumentationCommentTrivia)
-        || trivia.IsKind(SyntaxKind.DisabledTextTrivia);
 
     private static UnbreakableSpans BuildIndex(List<(int Position, int Delta)> events)
     {

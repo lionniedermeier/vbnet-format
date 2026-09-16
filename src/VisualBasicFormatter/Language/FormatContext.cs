@@ -12,10 +12,7 @@ namespace VisualBasicFormatter.Language;
 internal sealed class FormatContext
 {
     private readonly Lazy<SourceText> _text;
-
-    // Ascending start offsets of the tokens whose leading trivia carries a comment, a documentation
-    // comment or a directive. Built once; MustPrintVerbatim binary-searches it.
-    private readonly int[] _contentTriviaStarts;
+    private readonly ContentTrivia _contentTrivia;
 
     public FormatContext(FormatterOptions options, SyntaxNode root, string newLine)
     {
@@ -23,7 +20,8 @@ internal sealed class FormatContext
         NewLine = newLine;
 
         _text = new Lazy<SourceText>(() => root.SyntaxTree.GetText());
-        (_contentTriviaStarts, Unbreakable) = UnbreakableSpans.Build(root);
+        _contentTrivia = ContentTrivia.Build(root);
+        Unbreakable = UnbreakableSpans.Build(root);
 
         PrintOptions = new PrintOptions
         {
@@ -163,18 +161,7 @@ internal sealed class FormatContext
     /// node either way. Such a node is reproduced verbatim rather than taken apart, so that the
     /// comment does not move onto the wrong line.
     /// </summary>
-    public bool MustPrintVerbatim(SyntaxNode node)
-    {
-        var span = node.Span;
-
-        var index = Array.BinarySearch(_contentTriviaStarts, span.Start + 1);
-        if (index < 0)
-        {
-            index = ~index;
-        }
-
-        return index < _contentTriviaStarts.Length && _contentTriviaStarts[index] < span.End;
-    }
+    public bool MustPrintVerbatim(SyntaxNode node) => _contentTrivia.Intersects(node.Span);
 
     public Doc HardBreakAfter(SyntaxToken token) =>
         ContinuationPoints.IsImplicitAfter(token, Unbreakable) ? Doc.HardLine : Doc.Space;

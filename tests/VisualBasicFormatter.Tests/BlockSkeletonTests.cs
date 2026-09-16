@@ -103,10 +103,6 @@ public sealed class BlockSkeletonTests
                         Case Else
                             Idle()
                     End Select
-
-                    Dim handler = Function(value As Integer)
-                                      Return value * 2
-                                  End Function
                 End Sub
 
                 Public Function Describe() As String ' trailing comment

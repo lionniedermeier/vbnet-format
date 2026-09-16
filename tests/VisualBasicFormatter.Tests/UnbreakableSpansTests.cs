@@ -79,7 +79,7 @@ public sealed class UnbreakableSpansTests
     private static void AssertAgreement(string source)
     {
         var root = VisualBasicSyntaxTree.ParseText(source).GetRoot();
-        var (_, unbreakable) = UnbreakableSpans.Build(root);
+        var unbreakable = UnbreakableSpans.Build(root);
 
         foreach (var token in root.DescendantTokens())
         {

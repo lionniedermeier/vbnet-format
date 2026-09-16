@@ -196,6 +196,26 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitCaseStatement(CaseStatementSyntax node) =>
         CaseStatementRule.Format(node, this, _context);
 
+    public override Doc VisitAddRemoveHandlerStatement(AddRemoveHandlerStatementSyntax node)
+    {
+        if (
+            node.DelegateExpression is not MultiLineLambdaExpressionSyntax
+            || !ContinuationPoints.IsImplicitAfter(node.CommaToken, _context.Unbreakable)
+            || _context.MustPrintVerbatim(node)
+        )
+        {
+            return StructuralFallback.Format(node, this, _context);
+        }
+
+        return Doc.Concat(
+            _context.Token(node.AddHandlerOrRemoveHandlerKeyword),
+            _context.Gap(node.AddHandlerOrRemoveHandlerKeyword, node.EventExpression),
+            Format(node.EventExpression),
+            _context.Token(node.CommaToken),
+            Doc.Indent(_context.HardBreakAfter(node.CommaToken), Format(node.DelegateExpression))
+        );
+    }
+
     /// <summary>
     /// A lambda starts wherever the expression around it happens to end, so its body and its
     /// <c>End Function</c> hang off that column rather than off the enclosing statement's indent.

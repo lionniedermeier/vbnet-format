@@ -18,6 +18,8 @@ internal sealed partial class VbDocVisitor
     /// <summary>Dots the chain rule decided to break at, looked up again on the way down.</summary>
     private readonly HashSet<SyntaxToken> _chainBreaks = [];
 
+    private bool _insideLastResortDot;
+
     /// <inheritdoc/>
     public override Doc VisitArgumentList(ArgumentListSyntax node) =>
         VbDocBuilder.List(
@@ -31,14 +33,16 @@ internal sealed partial class VbDocVisitor
 
     /// <inheritdoc/>
     public override Doc VisitParameterList(ParameterListSyntax node) =>
-        VbDocBuilder.List(
-            node.OpenParenToken,
-            node.Parameters,
-            node.CloseParenToken,
-            ListLayout.Packed,
-            this,
-            _context
-        );
+        node.Parent is LambdaHeaderSyntax { Parent: SingleLineLambdaExpressionSyntax }
+            ? StructuralFallback.Format(node, this, _context)
+            : VbDocBuilder.List(
+                node.OpenParenToken,
+                node.Parameters,
+                node.CloseParenToken,
+                ListLayout.Packed,
+                this,
+                _context
+            );
 
     /// <summary>Rare and short, so a line of its own per type parameter costs nothing.</summary>
     public override Doc VisitTypeParameterList(TypeParameterListSyntax node) =>
@@ -177,6 +181,16 @@ internal sealed partial class VbDocVisitor
 
         if (dots.IsEmpty)
         {
+            if (!_insideLastResortDot && MemberChainRule.HasLastResortDot(node, _context))
+            {
+                var wasInside = _insideLastResortDot;
+                _insideLastResortDot = true;
+                var fill = MemberChainRule.LastResortDot(node, this, _context);
+                _insideLastResortDot = wasInside;
+
+                return BlockHeader.IsHeaderExpression(node) ? Doc.Indent(fill) : fill;
+            }
+
             return StructuralFallback.Format(node, this, _context);
         }
 

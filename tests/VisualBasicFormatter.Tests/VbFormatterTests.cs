@@ -384,6 +384,65 @@ public sealed class VbFormatterTests
         Assert.Contains(lines, l => l.TrimEnd().EndsWith("Return Sub()", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void BreaksTheCommaAndTheDotBeforeTheLambdaParameterList()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("SingleLineLambda"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+        Assert.Contains(
+            lines,
+            l =>
+                l.Trim()
+                    .StartsWith(
+                        "Sub(s, e) CollectionTypeStuff",
+                        StringComparison.Ordinal
+                    )
+        );
+        Assert.DoesNotContain(lines, l => l.Trim() == "s, e");
+    }
+
+    [Fact]
+    public void KeepsTheDotGluedWhenTheArgumentListCanBreakInstead()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("SingleLineLambda"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+        Assert.Contains(
+            lines,
+            l => l.Trim() == "logger.LogInformationWithContext("
+        );
+    }
+
+    [Fact]
+    public void HangsALambdaAssignmentButNotAPlainCallAssignment()
+    {
+        var result = VbFormatter.Format(TestCases.ReadInput("SingleLineLambda"));
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+
+        var assignment = Array.FindIndex(
+            lines,
+            l => l.Trim() == "Dim lambdaWithIfOperator________________________ ="
+        );
+        Assert.True(assignment >= 0);
+        Assert.Equal(Indent(lines[assignment]) + 4, Indent(lines[assignment + 1]));
+        Assert.StartsWith("Function(value As Integer?)", lines[assignment + 1].Trim());
+
+        Assert.Contains(
+            lines,
+            l =>
+                l.Trim()
+                    .StartsWith(
+                        "Dim plainCallAssignment_________________________________ = Compute(",
+                        StringComparison.Ordinal
+                    )
+        );
+    }
+
     /// <summary>
     /// A list that breaks first tries every element on one indented line, and only stacks them when
     /// that line does not fit either.

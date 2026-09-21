@@ -14,7 +14,7 @@ internal static class LambdaAssignmentRule
     )
     {
         if (
-            value is not MultiLineLambdaExpressionSyntax lambda
+            value is not LambdaExpressionSyntax lambda
             || !ContinuationPoints.IsImplicitAfter(op, context.Unbreakable)
             || context.MustPrintVerbatim(lambda)
         )
@@ -22,9 +22,9 @@ internal static class LambdaAssignmentRule
             return null;
         }
 
-        return Doc.Concat(
+        return Doc.Group(
             context.Token(op),
-            Doc.Indent(context.HardBreakAfter(op), visitor.Format(lambda))
+            Doc.Indent(context.BreakAfter(op), visitor.Format(lambda))
         );
     }
 }

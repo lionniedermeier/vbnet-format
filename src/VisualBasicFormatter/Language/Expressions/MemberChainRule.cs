@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
+using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language.Expressions;
 
@@ -120,4 +121,38 @@ internal static class MemberChainRule
             InvocationExpressionSyntax invocation => invocation.Expression == node,
             _ => false,
         };
+
+    public static bool HasLastResortDot(InvocationExpressionSyntax node, FormatContext context) =>
+        !ContinuesUpwards(node)
+        && !context.MustPrintVerbatim(node)
+        && node.Expression is MemberAccessExpressionSyntax { Expression: not null } access
+        && ContinuationPoints.IsImplicitAfter(access.OperatorToken, context.Unbreakable)
+        && CountDots(node, context) == 1;
+
+    public static Doc LastResortDot(
+        InvocationExpressionSyntax node,
+        VbDocVisitor visitor,
+        FormatContext context
+    )
+    {
+        var access = (MemberAccessExpressionSyntax)node.Expression!;
+        var dot = access.OperatorToken;
+
+        var tail =
+            node.ArgumentList is null
+                ? visitor.Format(access.Name)
+                : Doc.Concat(
+                    visitor.Format(access.Name),
+                    context.Gap(access.Name, node.ArgumentList),
+                    visitor.Format(node.ArgumentList)
+                );
+
+        return Doc.Fill(
+            [
+                Doc.Concat(visitor.Format(access.Expression!), context.Token(dot)),
+                Doc.Indent(context.SoftBreakAfter(dot)),
+                tail,
+            ]
+        );
+    }
 }

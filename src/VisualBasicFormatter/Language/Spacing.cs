@@ -44,7 +44,15 @@ internal static class Spacing
             return false;
         }
 
-        if (after is SyntaxKind.DotToken or SyntaxKind.ExclamationToken or SyntaxKind.AtToken)
+        if (before is SyntaxKind.QuestionToken && previous.Parent is ConditionalAccessExpressionSyntax)
+        {
+            return false;
+        }
+
+        if (
+            after is SyntaxKind.DotToken or SyntaxKind.ExclamationToken or SyntaxKind.AtToken
+            && !StartsOmittedQualifier(next)
+        )
         {
             return false;
         }
@@ -109,4 +117,14 @@ internal static class Spacing
                 or GetTypeExpressionSyntax
                 or NameOfExpressionSyntax
                 or GetXmlNamespaceExpressionSyntax;
+
+    private static bool StartsOmittedQualifier(SyntaxToken token) =>
+        token.Parent switch
+        {
+            MemberAccessExpressionSyntax access =>
+                access.Expression is null && access.OperatorToken == token,
+            XmlMemberAccessExpressionSyntax xml => xml.Base is null && xml.GetFirstToken() == token,
+            NamedFieldInitializerSyntax initializer => initializer.DotToken == token,
+            _ => false,
+        };
 }

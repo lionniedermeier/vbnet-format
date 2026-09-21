@@ -1111,6 +1111,9 @@ public sealed class VbFormatterTests
     [InlineData("Dim q = If( a>0 , a , -a )", "Dim q = If(a > 0, a, -a)")]
     [InlineData("Dim c = CType( x , Long )", "Dim c = CType(x, Long)")]
     [InlineData("Dim n As Integer?=Nothing", "Dim n As Integer? = Nothing")]
+    [InlineData("Dim a = New With {Key .Id = 1}", "Dim a = New With {Key .Id = 1}")]
+    [InlineData("Dim a = New With {Key.Id = 1}", "Dim a = New With {Key .Id = 1}")]
+    [InlineData("Dim v = obj?.Name", "Dim v = obj?.Name")]
     public void NormalizesSpacingBetweenTokens(string statement, string expected)
     {
         var source =

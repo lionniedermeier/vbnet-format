@@ -1,9 +1,10 @@
 Public Class SingleLineLambdas
 
-    Public Sub BreaksAtTheCommaThenTheDot()
+    Public Sub BreaksAtTheCommaButKeepsTheDotFlat()
         AddHandler btn.Click,
-            Sub(s, e) CollectionTypeStuff_____________________________________________________().
-                Where(Function(a) a.hasProp)
+            Sub(s, e) CollectionTypeStuff_____________________________________________________().Where(
+                Function(a) a.hasProp
+            )
     End Sub
 
     Public Sub KeepsAShortHandlerOnOneLine()
@@ -28,14 +29,14 @@ Public Class SingleLineLambdas
         )
     End Sub
 
-    Public Sub BreaksTheDotAsALastResort()
-        Call CollectionTypeStuff_____________________________________________________________________().
-            Where(Function(a) a.hasProp)
+    Public Sub WrapsTheArgumentListInsteadOfBreakingTheDot()
+        Call CollectionTypeStuff_____________________________________________________________________().Where(
+            Function(a) a.hasProp
+        )
     End Sub
 
     Public Sub SuppressesANestedLastResortDot()
-        a.
-            Foo(Function(x) x.Bar______________________________________________________________________________________())
+        a.Foo(Function(x) x.Bar______________________________________________________________________________________())
     End Sub
 
     Public Sub KeepsAShortLambdaAssignmentOnOneLine()
@@ -55,6 +56,12 @@ Public Class SingleLineLambdas
     Public Sub KeepsALongPlainCallAssignmentBreakingInsideItsOwnArgumentList()
         Dim plainCallAssignment_________________________________ = Compute(
             firstArgument, secondArgument, thirdArgument, four
+        )
+    End Sub
+
+    Public Async Sub WrapsASoleLambdaArgumentBeforeItsBody()
+        ident = Await some.Prop.ExecuteAsync(
+            Function(row, column) container(row, column).Something______________________________()
         )
     End Sub
 

@@ -282,8 +282,8 @@ public sealed class VbFormatterTests
             lines,
             l => l.TrimEnd().EndsWith("Any(", StringComparison.Ordinal)
         );
-        var close = Array.FindIndex(lines, l => l.Trim() == "))");
-        Assert.True(open >= 0 && close >= 0);
+        var close = Array.FindIndex(lines, open, lines.Length - open, l => l.Trim() == ")");
+        Assert.True(open >= 0 && close > open);
 
         var openIndent = lines[open][..(lines[open].Length - lines[open].TrimStart().Length)];
         var closeIndent = lines[close][..(lines[close].Length - lines[close].TrimStart().Length)];

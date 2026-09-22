@@ -7,16 +7,18 @@ Public Class LambdaArguments
     ' room and forcing them to break too. It goes below the bracket instead, and the AndAlso/OrElse
     ' runs get their width back.
     Public Sub FiltersByTagPrefix()
-        Dim matches = _employees.Where(Function(employee) employee.Status = EmployeeStatus.Active AndAlso
-            employee.Department IsNot Nothing AndAlso
-            employee.Name IsNot Nothing AndAlso
-            employee.Tags.Any(
-                Function(tag)
-                    Return tag.Length > 3 AndAlso tag.StartsWith("F", StringComparison.OrdinalIgnoreCase) OrElse
-                        tag.StartsWith("C", StringComparison.OrdinalIgnoreCase) OrElse
-                        tag.StartsWith("A", StringComparison.OrdinalIgnoreCase)
-                End Function
-            ))
+        Dim matches = _employees.Where(
+            Function(employee) employee.Status = EmployeeStatus.Active AndAlso
+                employee.Department IsNot Nothing AndAlso
+                employee.Name IsNot Nothing AndAlso
+                employee.Tags.Any(
+                    Function(tag)
+                        Return tag.Length > 3 AndAlso tag.StartsWith("F", StringComparison.OrdinalIgnoreCase) OrElse
+                            tag.StartsWith("C", StringComparison.OrdinalIgnoreCase) OrElse
+                            tag.StartsWith("A", StringComparison.OrdinalIgnoreCase)
+                    End Function
+                )
+        )
     End Sub
 
     ' A block last among several ordinary arguments still goes below the bracket, on its own.

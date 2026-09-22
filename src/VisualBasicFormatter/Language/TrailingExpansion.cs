@@ -30,8 +30,7 @@ internal static class TrailingExpansion
             ObjectCreationExpressionSyntax creation => creation.Initializer is not null,
             ArrayCreationExpressionSyntax
             or AnonymousObjectCreationExpressionSyntax
-            or CollectionInitializerSyntax
-            or LambdaExpressionSyntax => true,
+            or CollectionInitializerSyntax => true,
             _ => false,
         };
 

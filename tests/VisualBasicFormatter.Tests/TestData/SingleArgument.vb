@@ -9,7 +9,7 @@ Module SingleArgument
         Process(candidate.ResolvePrimaryHolder().LoadLinkedAccount().FetchActiveSubscription().IsWithinTheRenewalGracePeriodRightNow())
     End Sub
 
-    Public Sub HugsItsBracket()
+    Public Sub WrapsItsBracket()
         Register(Function(item) item.IsActive AndAlso item.HasValidSignature AndAlso item.RemainingTermInMonths > 0 AndAlso Not item.IsSuspended)
     End Sub
 

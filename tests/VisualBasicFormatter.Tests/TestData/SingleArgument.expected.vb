@@ -19,11 +19,13 @@ Module SingleArgument
         )
     End Sub
 
-    Public Sub HugsItsBracket()
-        Register(Function(item) item.IsActive AndAlso
-            item.HasValidSignature AndAlso
-            item.RemainingTermInMonths > 0 AndAlso
-            Not item.IsSuspended)
+    Public Sub WrapsItsBracket()
+        Register(
+            Function(item) item.IsActive AndAlso
+                item.HasValidSignature AndAlso
+                item.RemainingTermInMonths > 0 AndAlso
+                Not item.IsSuspended
+        )
     End Sub
 
     Public Sub KeepsTypeArgumentGlued()

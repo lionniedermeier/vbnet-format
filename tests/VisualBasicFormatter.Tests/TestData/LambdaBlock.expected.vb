@@ -31,8 +31,10 @@ Public Class LambdaBlocks
             paramA,
             paramB,
             Sub(someParam)
-                Dim matches = someParam.Where(Function(x) x.Value > 0 AndAlso ' inline note
-                    x.Other < 10)
+                Dim matches = someParam.Where(
+                    Function(x) x.Value > 0 AndAlso ' inline note
+                        x.Other < 10
+                )
                 Work(matches)
             End Sub
         )

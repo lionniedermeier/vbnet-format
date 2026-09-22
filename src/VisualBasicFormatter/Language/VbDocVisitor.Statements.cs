@@ -196,6 +196,26 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitCaseStatement(CaseStatementSyntax node) =>
         CaseStatementRule.Format(node, this, _context);
 
+    public override Doc VisitHandlesClause(HandlesClauseSyntax node) =>
+        SignatureClauseRule.Format(node, node.HandlesKeyword, node.Events, this, _context);
+
+    public override Doc VisitImplementsClause(ImplementsClauseSyntax node) =>
+        SignatureClauseRule.Format(node, node.ImplementsKeyword, node.InterfaceMembers, this, _context);
+
+    public override Doc VisitImplementsStatement(ImplementsStatementSyntax node)
+    {
+        if (node.Types.SeparatorCount == 0 || _context.MustPrintVerbatim(node))
+        {
+            return StructuralFallback.Format(node, this, _context);
+        }
+
+        return Doc.Concat(
+            _context.Token(node.ImplementsKeyword),
+            Doc.Space,
+            VbDocBuilder.Run(node.Types, this, _context)
+        );
+    }
+
     public override Doc VisitAddRemoveHandlerStatement(AddRemoveHandlerStatementSyntax node)
     {
         if (

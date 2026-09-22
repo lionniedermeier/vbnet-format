@@ -1128,6 +1128,73 @@ public sealed class VbFormatterTests
         );
     }
 
+    [Fact]
+    public void DoubleIndentsAWrappedHandlesClauseBelowTheParameterList()
+    {
+        var lines = Lines("HandlesClause");
+
+        var head = Array.FindIndex(lines, l => l.Trim() == ") Handles A________.Click,");
+
+        Assert.True(head >= 0);
+        Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
+        Assert.Equal("B_________.Click,", lines[head + 1].TrimStart());
+    }
+
+    [Fact]
+    public void ForcesTheParameterListOpenWhenTheHandlesClauseWraps()
+    {
+        var lines = Lines("HandlesClause");
+
+        var open = Array.FindIndex(lines, l => l.Trim() == "Private Sub Handler(");
+        Assert.True(open >= 0);
+        Assert.Equal(
+            "sender As Object, e As EventArgs",
+            lines[open + 1].Trim()
+        );
+    }
+
+    [Fact]
+    public void LeavesTheParameterListClosedWhenTheHandlesClauseFitsFlat()
+    {
+        var lines = Lines("HandlesClause");
+
+        Assert.Contains(
+            lines,
+            l =>
+                l.Trim()
+                == "Private Sub ShortHandler(sender As Object, e As EventArgs) Handles A________.Click, B_________.Click"
+        );
+    }
+
+    [Fact]
+    public void SingleIndentsAWrappedClassImplementsStatement()
+    {
+        var lines = Lines("ImplementsClause");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Trim() == "Implements InterfaceA__________________,"
+        );
+
+        Assert.True(head >= 0);
+        Assert.Equal(Indent(lines[head]) + 4, Indent(lines[head + 1]));
+        Assert.Equal("InterfaceB__________________,", lines[head + 1].TrimStart());
+    }
+
+    [Fact]
+    public void DoubleIndentsAWrappedMethodImplementsClause()
+    {
+        var lines = Lines("ImplementsClause");
+
+        var head = Array.FindIndex(
+            lines,
+            l => l.Trim() == ") As Integer Implements IComparer______________.Compare,"
+        );
+
+        Assert.True(head >= 0);
+        Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
+    }
+
     private static string[] Lines(string name) =>
         VbFormatter.Format(TestCases.ReadInput(name)).Text.ReplaceLineEndings("\n").Split('\n');
 

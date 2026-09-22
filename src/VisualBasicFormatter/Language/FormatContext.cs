@@ -49,6 +49,30 @@ internal sealed class FormatContext
 
     public UnbreakableSpans Unbreakable { get; }
 
+    private SyntaxToken _hoisted;
+
+    /// <summary>
+    /// The leading trivia of <paramref name="token"/>, or nothing when a caller has hoisted it out
+    /// to print ahead of the group it would otherwise land inside -- see <see cref="Hoist"/>.
+    /// </summary>
+    public Doc Leading(SyntaxToken token) =>
+        token.HasLeadingTrivia && token != _hoisted ? TriviaPrinter.Leading(token, this) : Doc.Nothing;
+
+    /// <summary>
+    /// Suppresses <paramref name="token"/>'s leading trivia from <see cref="Token"/> and
+    /// <see cref="Leading"/>, returning the token to pass to <see cref="Restore"/> once the caller
+    /// has printed it itself. Only one token is suppressed at a time.
+    /// </summary>
+    public SyntaxToken Hoist(SyntaxToken token)
+    {
+        var previous = _hoisted;
+        _hoisted = token;
+        return previous;
+    }
+
+    /// <summary>Undoes <see cref="Hoist"/>, restoring the token that was suppressed before it.</summary>
+    public void Restore(SyntaxToken token) => _hoisted = token;
+
     /// <summary>
     /// A token with the comments that hang on it. The whitespace that separated it from its
     /// neighbours is deliberately not emitted: spacing is the rule's decision, not the input's.
@@ -57,7 +81,7 @@ internal sealed class FormatContext
     {
         var text = TokenText(token);
 
-        var leading = token.HasLeadingTrivia ? TriviaPrinter.Leading(token, this) : Doc.Nothing;
+        var leading = Leading(token);
         var trailing = token.HasTrailingTrivia ? TriviaPrinter.Trailing(token, this) : Doc.Nothing;
 
         // Whitespace-only trivia -- an indent -- prints nothing, so most tokens land here.

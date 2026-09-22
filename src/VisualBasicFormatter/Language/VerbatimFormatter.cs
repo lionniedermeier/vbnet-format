@@ -21,7 +21,7 @@ internal static class VerbatimFormatter
     /// </summary>
     public static Doc Format(SyntaxNode node, FormatContext context) =>
         Doc.Concat(
-            TriviaPrinter.Leading(node.GetFirstToken(), context),
+            context.Leading(node.GetFirstToken()),
             Body(node, context),
             TriviaPrinter.Trailing(node.GetLastToken(), context)
         );

@@ -42,7 +42,32 @@ internal sealed partial class VbDocVisitor : VisualBasicSyntaxVisitor<Doc>
             return VerbatimFormatter.Format(node, _context);
         }
 
+        // A statement's own leading comment sits above the whole line already, so it takes no
+        // part in the statement's flat-or-broken decision: hoisting it out of the statement's doc
+        // keeps a short commented statement from being force-wrapped by its own comment's break.
+        if (node is StatementSyntax && node.HasLeadingTrivia)
+        {
+            return FormatStatement(node);
+        }
+
         return Visit(node) ?? Doc.Nothing;
+    }
+
+    private Doc FormatStatement(SyntaxNode node)
+    {
+        var first = node.GetFirstToken();
+        var leading = _context.Leading(first);
+
+        if (Doc.IsNothing(leading))
+        {
+            return Visit(node) ?? Doc.Nothing;
+        }
+
+        var previous = _context.Hoist(first);
+        var body = Visit(node) ?? Doc.Nothing;
+        _context.Restore(previous);
+
+        return Doc.Concat(leading, body);
     }
 
     /// <summary>Formats a whole file.</summary>

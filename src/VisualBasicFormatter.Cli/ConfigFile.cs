@@ -8,7 +8,7 @@ namespace VisualBasicFormatter.Cli;
 /// <summary>The contents of a <c>.vbfmtrc</c>. Unset values keep their default.</summary>
 internal sealed record ConfigFile
 {
-    public int? MaxLineLength { get; init; }
+    public int? PrintWidth { get; init; }
 
     public int? IndentSize { get; init; }
 
@@ -29,7 +29,7 @@ internal sealed record ConfigFile
     public FormatterOptions ApplyTo(FormatterOptions options) =>
         options with
         {
-            MaxLineLength = MaxLineLength ?? options.MaxLineLength,
+            PrintWidth = PrintWidth ?? options.PrintWidth,
             IndentSize = IndentSize ?? options.IndentSize,
             UseTabs = UseTabs ?? options.UseTabs,
             EndOfLine = EndOfLine ?? options.EndOfLine,
@@ -56,7 +56,7 @@ internal sealed record ConfigFile
     public static ConfigFile From(FormatterOptions options) =>
         new()
         {
-            MaxLineLength = options.MaxLineLength,
+            PrintWidth = options.PrintWidth,
             IndentSize = options.IndentSize,
             UseTabs = options.UseTabs,
             EndOfLine = options.EndOfLine,
@@ -89,6 +89,7 @@ internal sealed record ConfigFile
 
 [JsonSourceGenerationOptions(
     PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     ReadCommentHandling = JsonCommentHandling.Skip,
     AllowTrailingCommas = true,
     WriteIndented = true,

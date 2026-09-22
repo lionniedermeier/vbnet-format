@@ -329,7 +329,7 @@ internal sealed class DocPrinter
     /// </param>
     private bool Fits(Command next, bool declaredBreaksOnly = false)
     {
-        if (_column > _options.MaxLineLength)
+        if (_column > _options.PrintWidth)
         {
             return false;
         }
@@ -422,7 +422,7 @@ internal sealed class DocPrinter
                     column = TextWidth.Measure(verbatim.Lines[0], column, _options.IndentSize);
 
                     // A further line means the line under test ends here.
-                    if (verbatim.Lines.Length > 1 && column <= _options.MaxLineLength)
+                    if (verbatim.Lines.Length > 1 && column <= _options.PrintWidth)
                     {
                         return true;
                     }
@@ -446,7 +446,7 @@ internal sealed class DocPrinter
                     break;
             }
 
-            if (column > _options.MaxLineLength)
+            if (column > _options.PrintWidth)
             {
                 return false;
             }

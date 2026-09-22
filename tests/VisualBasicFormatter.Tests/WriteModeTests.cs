@@ -157,7 +157,7 @@ public sealed class WriteModeTests : IDisposable
             [_root],
             _root,
             IgnoreSet.Empty,
-            new FormatterOptions(),
+            new FormatterEngine(new OptionOverrides()),
             write,
             check: false,
             diff: false,

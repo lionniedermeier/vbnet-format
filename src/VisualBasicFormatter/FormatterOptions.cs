@@ -26,7 +26,7 @@ public enum EndOfLine
 public sealed record FormatterOptions
 {
     /// <summary>The column width lines are wrapped at.</summary>
-    public int MaxLineLength { get; init; } = 120;
+    public int PrintWidth { get; init; } = 120;
 
     /// <summary>The number of characters per indentation level.</summary>
     public int IndentSize { get; init; } = 4;

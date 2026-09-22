@@ -200,7 +200,13 @@ internal sealed partial class VbDocVisitor
         SignatureClauseRule.Format(node, node.HandlesKeyword, node.Events, this, _context);
 
     public override Doc VisitImplementsClause(ImplementsClauseSyntax node) =>
-        SignatureClauseRule.Format(node, node.ImplementsKeyword, node.InterfaceMembers, this, _context);
+        SignatureClauseRule.Format(
+            node,
+            node.ImplementsKeyword,
+            node.InterfaceMembers,
+            this,
+            _context
+        );
 
     public override Doc VisitImplementsStatement(ImplementsStatementSyntax node)
     {

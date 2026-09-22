@@ -351,7 +351,9 @@ public sealed class VbFormatterTests
         Assert.Contains(lines, l => l.Trim() == "paramA,");
         Assert.Contains(
             lines,
-            l => l.Trim() == "' Lambda content with several nested layers that are longer than printWidth"
+            l =>
+                l.Trim()
+                == "' Lambda content with several nested layers that are longer than printWidth"
         );
     }
 
@@ -393,12 +395,7 @@ public sealed class VbFormatterTests
         Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
         Assert.Contains(
             lines,
-            l =>
-                l.Trim()
-                    .StartsWith(
-                        "Sub(s, e) CollectionTypeStuff",
-                        StringComparison.Ordinal
-                    )
+            l => l.Trim().StartsWith("Sub(s, e) CollectionTypeStuff", StringComparison.Ordinal)
         );
         Assert.DoesNotContain(lines, l => l.Trim() == "s, e");
     }
@@ -410,10 +407,7 @@ public sealed class VbFormatterTests
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
         Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
-        Assert.Contains(
-            lines,
-            l => l.Trim() == "logger.LogInformationWithContext("
-        );
+        Assert.Contains(lines, l => l.Trim() == "logger.LogInformationWithContext(");
     }
 
     [Fact]
@@ -501,7 +495,7 @@ public sealed class VbFormatterTests
             """;
 
         var lines = VbFormatter
-            .Format(Source.ReplaceLineEndings("\r\n"), new FormatterOptions { MaxLineLength = 60 })
+            .Format(Source.ReplaceLineEndings("\r\n"), new FormatterOptions { PrintWidth = 60 })
             .Text.ReplaceLineEndings("\n")
             .Split('\n');
 
@@ -902,7 +896,9 @@ public sealed class VbFormatterTests
 
         var head = Array.FindIndex(
             lines,
-            l => l.TrimStart().StartsWith("For Each element In elementStore.", StringComparison.Ordinal)
+            l =>
+                l.TrimStart()
+                    .StartsWith("For Each element In elementStore.", StringComparison.Ordinal)
         );
 
         Assert.True(head >= 0);
@@ -947,10 +943,7 @@ public sealed class VbFormatterTests
     {
         var lines = Lines("ParenthesizedConditions");
 
-        var head = Array.FindIndex(
-            lines,
-            l => l.Trim() == "If (candidate.IsActive AndAlso"
-        );
+        var head = Array.FindIndex(lines, l => l.Trim() == "If (candidate.IsActive AndAlso");
 
         Assert.True(head >= 0);
         var close = Array.FindIndex(lines, head, l => l.Trim() == ") Then");
@@ -983,7 +976,7 @@ public sealed class VbFormatterTests
     public void KeepsEveryWrappedConditionWithinTheWidth()
     {
         var lines = Lines("ParenthesizedConditions");
-        var limit = new FormatterOptions().MaxLineLength;
+        var limit = new FormatterOptions().PrintWidth;
 
         Assert.All(lines, l => Assert.True(l.Length <= limit, l));
     }
@@ -1147,10 +1140,7 @@ public sealed class VbFormatterTests
 
         var open = Array.FindIndex(lines, l => l.Trim() == "Private Sub Handler(");
         Assert.True(open >= 0);
-        Assert.Equal(
-            "sender As Object, e As EventArgs",
-            lines[open + 1].Trim()
-        );
+        Assert.Equal("sender As Object, e As EventArgs", lines[open + 1].Trim());
     }
 
     [Fact]

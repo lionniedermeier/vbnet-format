@@ -14,15 +14,6 @@ internal static class Program
 
     private const string DefaultConfigFileName = ".vbfmtrc";
 
-    private static readonly string[] ConfigFileNames =
-    [
-        ".vbfmtrc",
-        ".vbfmtrc.json",
-        "vbnet-format.json",
-        "vbnetformatrc",
-        "vbnetformatrc.json",
-    ];
-
     private static readonly string[] IgnoreFileNames =
     [
         ".vbnetformatignore",
@@ -84,7 +75,7 @@ internal static class Program
             Description = "Print how many files were formatted and how long the run took.",
         };
 
-        var maxLineLength = new Option<int?>("--max-line-length")
+        var printWidth = new Option<int?>("--print-width")
         {
             Description =
                 "The column width lines are wrapped at (default 120). A target, not a hard ceiling.",
@@ -95,9 +86,10 @@ internal static class Program
             Description = "The number of characters per indentation level (default 4).",
         };
 
-        var useTabs = new Option<bool>("--use-tabs")
+        var useTabs = new Option<bool?>("--use-tabs")
         {
-            Description = "Indent with tabs instead of spaces.",
+            Description =
+                "Indent with tabs instead of spaces. Pass false to force spaces even when the config file sets tabs.",
         };
 
         var endOfLine = new Option<EndOfLine?>("--end-of-line")
@@ -120,7 +112,7 @@ internal static class Program
         var config = new Option<FileInfo?>("--config")
         {
             Description =
-                $"Path to a config file. Without it, {string.Join(", ", ConfigFileNames)} are searched for, walking up from the working directory.",
+                $"Path to a config file. Without it, {string.Join(", ", ConfigLocator.FileNames)} are searched for, walking up from each file's own directory to the nearest repository root.",
         };
 
         var ignorePath = new Option<string[]>("--ignore-path")
@@ -165,7 +157,7 @@ internal static class Program
             write,
             verbose,
             summary,
-            maxLineLength,
+            printWidth,
             indentSize,
             useTabs,
             endOfLine,
@@ -196,18 +188,18 @@ internal static class Program
                     return ExitError;
                 }
 
-                var options = BuildOptions(
-                    result.GetValue(config),
-                    result.GetValue(maxLineLength),
+                var overrides = BuildOverrides(
+                    result.GetValue(printWidth),
                     result.GetValue(indentSize),
                     result.GetValue(useTabs),
                     result.GetValue(endOfLine),
                     result.GetValue(languageVersion),
                     result.GetValue(noOrganizeImports)
                 );
+                var engine = new FormatterEngine(overrides, result.GetValue(config)?.FullName);
 
                 return result.GetValue(stdin)
-                    ? RunStdin(options)
+                    ? RunStdin(engine)
                     : RunFiles(
                         result.GetValue(paths) ?? [],
                         Directory.GetCurrentDirectory(),
@@ -217,7 +209,7 @@ internal static class Program
                             !result.GetValue(noRespectGitignore),
                             result.GetValue(noIgnore)
                         ),
-                        options,
+                        engine,
                         result.GetValue(write),
                         result.GetValue(check),
                         result.GetValue(diff),
@@ -260,81 +252,23 @@ internal static class Program
         return ExitOk;
     }
 
-    private static FormatterOptions BuildOptions(
-        FileInfo? configFile,
-        int? maxLineLength,
+    private static OptionOverrides BuildOverrides(
+        int? printWidth,
         int? indentSize,
-        bool useTabs,
+        bool? useTabs,
         EndOfLine? endOfLine,
         string? languageVersion,
         bool noOrganizeImports
-    )
-    {
-        var options = new FormatterOptions();
-
-        var path = configFile?.FullName ?? DiscoverConfig();
-        if (path is not null)
+    ) =>
+        new()
         {
-            options = ConfigFile.Load(path).ApplyTo(options);
-        }
-
-        // An explicit switch beats the configuration file.
-        if (maxLineLength is { } limit)
-        {
-            options = options with { MaxLineLength = limit };
-        }
-
-        if (indentSize is { } indent)
-        {
-            options = options with { IndentSize = indent };
-        }
-
-        if (useTabs)
-        {
-            options = options with { UseTabs = true };
-        }
-
-        if (endOfLine is { } lineEnding)
-        {
-            options = options with { EndOfLine = lineEnding };
-        }
-
-        if (languageVersion is not null)
-        {
-            options = options with
-            {
-                LanguageVersion = ConfigFile.ParseLanguageVersion(languageVersion),
-            };
-        }
-
-        if (noOrganizeImports)
-        {
-            options = options with { OrganizeImports = false };
-        }
-
-        return options;
-    }
-
-    private static string? DiscoverConfig()
-    {
-        for (
-            var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-            dir is not null;
-            dir = dir.Parent
-        )
-        {
-            foreach (var name in ConfigFileNames)
-            {
-                var candidate = Path.Combine(dir.FullName, name);
-                if (File.Exists(candidate))
-                {
-                    return candidate;
-                }
-            }
-        }
-
-        return null;
-    }
+            PrintWidth = printWidth,
+            IndentSize = indentSize,
+            UseTabs = useTabs,
+            EndOfLine = endOfLine,
+            LanguageVersion = languageVersion,
+            OrganizeImports = noOrganizeImports ? false : null,
+        };
 
     internal static IgnoreSet DiscoverIgnores(
         string baseDirectory,
@@ -370,9 +304,9 @@ internal static class Program
         return new IgnoreSet(files);
     }
 
-    private static int RunStdin(FormatterOptions options)
+    private static int RunStdin(FormatterEngine engine)
     {
-        var result = VbFormatter.Format(Console.In.ReadToEnd(), options);
+        var result = engine.FormatStandardInput(Console.In.ReadToEnd());
         if (result.HasErrors)
         {
             Report("<stdin>", result);
@@ -387,7 +321,7 @@ internal static class Program
         string[] paths,
         string root,
         IgnoreSet ignores,
-        FormatterOptions options,
+        FormatterEngine engine,
         bool write,
         bool check,
         bool diff,
@@ -421,7 +355,7 @@ internal static class Program
         {
             var fileStart = Stopwatch.GetTimestamp();
             var source = File.ReadAllText(file);
-            var result = VbFormatter.Format(source, options);
+            var result = engine.Format(file, source);
 
             if (result.HasErrors)
             {

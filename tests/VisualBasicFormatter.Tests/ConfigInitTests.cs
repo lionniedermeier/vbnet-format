@@ -37,7 +37,7 @@ public sealed class ConfigInitTests : IDisposable
 
         var config = ConfigFile.Load(ConfigPath);
 
-        Assert.NotNull(config.MaxLineLength);
+        Assert.NotNull(config.PrintWidth);
         Assert.NotNull(config.IndentSize);
         Assert.NotNull(config.UseTabs);
         Assert.NotNull(config.EndOfLine);

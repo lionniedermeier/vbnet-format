@@ -7,13 +7,13 @@ namespace VisualBasicFormatter.Tests;
 public sealed class DocPrinterTests
 {
     private static PrintOptions Options(
-        int maxLineLength = 80,
+        int printWidth = 80,
         int indentSize = 4,
         bool useTabs = false
     ) =>
         new()
         {
-            MaxLineLength = maxLineLength,
+            PrintWidth = printWidth,
             IndentSize = indentSize,
             UseTabs = useTabs,
             NewLine = "\n",
@@ -35,7 +35,7 @@ public sealed class DocPrinterTests
     {
         var doc = Doc.Group(Doc.Concat(Doc.Text("abc"), Doc.SoftLine, Doc.Text("def")));
 
-        Assert.Equal("abc\ndef", Print(doc, Options(maxLineLength: 4)));
+        Assert.Equal("abc\ndef", Print(doc, Options(printWidth: 4)));
     }
 
     /// <summary>A space line is a space when flat and a break when the group expands.</summary>
@@ -45,7 +45,7 @@ public sealed class DocPrinterTests
         var doc = Doc.Group(Doc.Concat(Doc.Text("aaa"), Doc.Line, Doc.Text("bbb")));
 
         Assert.Equal("aaa bbb", Print(doc));
-        Assert.Equal("aaa\nbbb", Print(doc, Options(maxLineLength: 5)));
+        Assert.Equal("aaa\nbbb", Print(doc, Options(printWidth: 5)));
     }
 
     /// <summary>A broken group does not drag its nested groups along; each is measured again.</summary>
@@ -60,7 +60,7 @@ public sealed class DocPrinterTests
             )
         );
 
-        Assert.Equal("aaa\nb c", Print(doc, Options(maxLineLength: 5)));
+        Assert.Equal("aaa\nb c", Print(doc, Options(printWidth: 5)));
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public sealed class DocPrinterTests
             Doc.Text("EFGH")
         );
 
-        Assert.Equal("ab\ncdEFGH", Print(doc, Options(maxLineLength: 6)));
+        Assert.Equal("ab\ncdEFGH", Print(doc, Options(printWidth: 6)));
     }
 
     /// <summary>A hard line anywhere inside forces every enclosing group to break.</summary>
@@ -121,7 +121,7 @@ public sealed class DocPrinterTests
 
         // Indent 4 + "abcd" is 8 and exceeds 6, so the group breaks. Were the tab counted as one
         // column the group would fit and stay flat.
-        Assert.Equal("\n\tab\n\tcd", Print(doc, Options(maxLineLength: 6, useTabs: true)));
+        Assert.Equal("\n\tab\n\tcd", Print(doc, Options(printWidth: 6, useTabs: true)));
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class DocPrinterTests
             )
         );
 
-        Assert.Equal("Foo(a,\n    b)", Print(doc, Options(maxLineLength: 6)));
+        Assert.Equal("Foo(a,\n    b)", Print(doc, Options(printWidth: 6)));
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public sealed class DocPrinterTests
         );
 
         Assert.Equal("a b", Print(doc));
-        Assert.Equal("a _\nb", Print(doc, Options(maxLineLength: 2)));
+        Assert.Equal("a _\nb", Print(doc, Options(printWidth: 2)));
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public sealed class DocPrinterTests
     {
         var doc = Doc.Fill([Doc.Text("aa"), Doc.Line, Doc.Text("bb"), Doc.Line, Doc.Text("cc")]);
 
-        Assert.Equal("aa bb\ncc", Print(doc, Options(maxLineLength: 5)));
+        Assert.Equal("aa bb\ncc", Print(doc, Options(printWidth: 5)));
     }
 
     /// <summary>
@@ -225,8 +225,8 @@ public sealed class DocPrinterTests
                 strict
             );
 
-        Assert.Equal("aa bb\ncc", Print(Parts(strict: false), Options(maxLineLength: 5)));
-        Assert.Equal("aa\nbbcc", Print(Parts(strict: true), Options(maxLineLength: 5)));
+        Assert.Equal("aa bb\ncc", Print(Parts(strict: false), Options(printWidth: 5)));
+        Assert.Equal("aa\nbbcc", Print(Parts(strict: true), Options(printWidth: 5)));
     }
 
     /// <summary>A group may be told to break without anything inside it demanding one.</summary>
@@ -243,11 +243,11 @@ public sealed class DocPrinterTests
     {
         var doc = Doc.ConditionalGroup(Doc.Text("aaaaaaaa"), Doc.Text("bbbb"), Doc.Text("cc"));
 
-        Assert.Equal("aaaaaaaa", Print(doc, Options(maxLineLength: 80)));
-        Assert.Equal("bbbb", Print(doc, Options(maxLineLength: 5)));
+        Assert.Equal("aaaaaaaa", Print(doc, Options(printWidth: 80)));
+        Assert.Equal("bbbb", Print(doc, Options(printWidth: 5)));
 
         // Nothing fits, so the most expanded one is used anyway.
-        Assert.Equal("cc", Print(doc, Options(maxLineLength: 1)));
+        Assert.Equal("cc", Print(doc, Options(printWidth: 1)));
     }
 
     /// <summary>
@@ -264,7 +264,7 @@ public sealed class DocPrinterTests
             Doc.Concat(Doc.Text("aaa "), Doc.Group(inner, shouldBreak: true))
         );
 
-        Assert.Equal("aaa b\nc", Print(doc, Options(maxLineLength: 5)));
+        Assert.Equal("aaa b\nc", Print(doc, Options(printWidth: 5)));
     }
 
     /// <summary>
@@ -283,7 +283,7 @@ public sealed class DocPrinterTests
             Doc.Text("short")
         );
 
-        Assert.Equal("short", Print(doc, Options(maxLineLength: 5)));
+        Assert.Equal("short", Print(doc, Options(printWidth: 5)));
     }
 
     /// <summary>The forced break of a layout must not reach the groups above the choice.</summary>
@@ -379,7 +379,7 @@ public sealed class DocPrinterTests
     {
         var printed = DocPrinter.Print(
             Doc.Group(Doc.Concat(Doc.Text("a"), Doc.SoftLine, Doc.Text("b"))),
-            Options(maxLineLength: 1)
+            Options(printWidth: 1)
         );
 
         Assert.Equal("a\nb", printed);

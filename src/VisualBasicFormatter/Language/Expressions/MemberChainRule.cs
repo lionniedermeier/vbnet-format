@@ -41,7 +41,7 @@ internal static class MemberChainRule
         var dots = new SyntaxToken[count];
         var index = count - 1;
 
-        for (ExpressionSyntax? current = node; current is not null;)
+        for (ExpressionSyntax? current = node; current is not null; )
         {
             switch (current)
             {
@@ -77,7 +77,7 @@ internal static class MemberChainRule
     {
         var count = 0;
 
-        for (ExpressionSyntax? current = node; current is not null;)
+        for (ExpressionSyntax? current = node; current is not null; )
         {
             switch (current)
             {
@@ -138,21 +138,18 @@ internal static class MemberChainRule
         var access = (MemberAccessExpressionSyntax)node.Expression!;
         var dot = access.OperatorToken;
 
-        var tail =
-            node.ArgumentList is null
-                ? visitor.Format(access.Name)
-                : Doc.Concat(
-                    visitor.Format(access.Name),
-                    context.Gap(access.Name, node.ArgumentList),
-                    visitor.Format(node.ArgumentList)
-                );
+        var tail = node.ArgumentList is null
+            ? visitor.Format(access.Name)
+            : Doc.Concat(
+                visitor.Format(access.Name),
+                context.Gap(access.Name, node.ArgumentList),
+                visitor.Format(node.ArgumentList)
+            );
 
-        return Doc.Fill(
-            [
-                Doc.Concat(visitor.Format(access.Expression!), context.Token(dot)),
-                Doc.Indent(context.SoftBreakAfter(dot)),
-                tail,
-            ]
-        );
+        return Doc.Fill([
+            Doc.Concat(visitor.Format(access.Expression!), context.Token(dot)),
+            Doc.Indent(context.SoftBreakAfter(dot)),
+            tail,
+        ]);
     }
 }

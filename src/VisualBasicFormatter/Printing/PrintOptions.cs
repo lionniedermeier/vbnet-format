@@ -7,7 +7,7 @@ namespace VisualBasicFormatter.Printing;
 internal sealed record PrintOptions
 {
     /// <summary>Column limit a group tries to stay within.</summary>
-    public int MaxLineLength { get; init; } = 120;
+    public int PrintWidth { get; init; } = 120;
 
     /// <summary>Columns per indent level.</summary>
     public int IndentSize { get; init; } = 4;

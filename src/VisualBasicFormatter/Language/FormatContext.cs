@@ -25,7 +25,7 @@ internal sealed class FormatContext
 
         PrintOptions = new PrintOptions
         {
-            MaxLineLength = options.MaxLineLength,
+            PrintWidth = options.PrintWidth,
             IndentSize = options.IndentSize,
             UseTabs = options.UseTabs,
             NewLine = newLine,
@@ -56,7 +56,9 @@ internal sealed class FormatContext
     /// to print ahead of the group it would otherwise land inside -- see <see cref="Hoist"/>.
     /// </summary>
     public Doc Leading(SyntaxToken token) =>
-        token.HasLeadingTrivia && token != _hoisted ? TriviaPrinter.Leading(token, this) : Doc.Nothing;
+        token.HasLeadingTrivia && token != _hoisted
+            ? TriviaPrinter.Leading(token, this)
+            : Doc.Nothing;
 
     /// <summary>
     /// Suppresses <paramref name="token"/>'s leading trivia from <see cref="Token"/> and

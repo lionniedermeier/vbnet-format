@@ -44,7 +44,10 @@ internal static class Spacing
             return false;
         }
 
-        if (before is SyntaxKind.QuestionToken && previous.Parent is ConditionalAccessExpressionSyntax)
+        if (
+            before is SyntaxKind.QuestionToken
+            && previous.Parent is ConditionalAccessExpressionSyntax
+        )
         {
             return false;
         }
@@ -121,8 +124,8 @@ internal static class Spacing
     private static bool StartsOmittedQualifier(SyntaxToken token) =>
         token.Parent switch
         {
-            MemberAccessExpressionSyntax access =>
-                access.Expression is null && access.OperatorToken == token,
+            MemberAccessExpressionSyntax access => access.Expression is null
+                && access.OperatorToken == token,
             XmlMemberAccessExpressionSyntax xml => xml.Base is null && xml.GetFirstToken() == token,
             NamedFieldInitializerSyntax initializer => initializer.DotToken == token,
             _ => false,

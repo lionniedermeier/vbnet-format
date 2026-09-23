@@ -1227,10 +1227,7 @@ public sealed class VbFormatterTests
         );
 
         Assert.True(open >= 0);
-        Assert.Equal(
-            "ParamA As VeryLongTypeName________________________,",
-            lines[open + 3].Trim()
-        );
+        Assert.Equal("ParamA As VeryLongTypeName________________________,", lines[open + 3].Trim());
         Assert.Equal(")", lines[open + 6].Trim());
     }
 

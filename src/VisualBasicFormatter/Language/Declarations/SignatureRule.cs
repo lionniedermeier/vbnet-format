@@ -67,9 +67,8 @@ internal static class SignatureRule
                         visitor,
                         context
                     )
-                    : child.IsNode
-                        ? visitor.Format(child.AsNode())
-                        : context.Token(child.AsToken())
+                : child.IsNode ? visitor.Format(child.AsNode())
+                : context.Token(child.AsToken())
             );
 
             if (i + 1 < count)

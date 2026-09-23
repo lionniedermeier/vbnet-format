@@ -5,16 +5,22 @@ using VisualBasicFormatter;
 
 namespace VisualBasicFormatter.Cli;
 
+internal enum RunMode
+{
+    Format,
+    Check,
+    Diff,
+}
+
 internal static class Program
 {
-    /// <summary>0 = all good, 1 = <c>--check</c> found differences, 2 = error.</summary>
-    private const int ExitOk = 0;
-    private const int ExitWouldChange = 1;
-    private const int ExitError = 2;
+    internal const int ExitOk = 0;
+    internal const int ExitWouldChange = 1;
+    internal const int ExitError = 2;
 
-    private const string DefaultConfigFileName = ".vbfmtrc";
+    internal const string DefaultConfigFileName = ".vbfmtrc";
 
-    private static readonly string[] IgnoreFileNames =
+    internal static readonly string[] IgnoreFileNames =
     [
         ".vbnetformatignore",
         ".vbfmtignore",
@@ -36,194 +42,15 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        var paths = new Argument<string[]>("paths")
-        {
-            Description =
-                "Files, directories or glob patterns. Directories are searched for **/*.vb, skipping generated *.Designer.vb files.",
-            Arity = ArgumentArity.ZeroOrMore,
-        };
-
-        var check = new Option<bool>("--check")
-        {
-            Description = "Write nothing; exit code 1 if any file would be reformatted.",
-        };
-
-        var diff = new Option<bool>("--diff")
-        {
-            Description = "Write nothing; print the changes as a unified diff.",
-        };
-
-        var stdin = new Option<bool>("--stdin")
-        {
-            Description =
-                "Read source from standard input and write the formatted result to standard output.",
-        };
-
-        var write = new Option<bool>("--write", "-w")
-        {
-            Description =
-                "Format the files in place. Without it the formatted source is written to standard output and the files are left untouched.",
-        };
-
-        var verbose = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Print one line per formatted file with the time it took.",
-        };
-
-        var summary = new Option<bool>("--summary")
-        {
-            Description = "Print how many files were formatted and how long the run took.",
-        };
-
-        var printWidth = new Option<int?>("--print-width")
-        {
-            Description =
-                "The column width lines are wrapped at (default 120). A target, not a hard ceiling.",
-        };
-
-        var indentSize = new Option<int?>("--indent-size")
-        {
-            Description = "The number of characters per indentation level (default 4).",
-        };
-
-        var useTabs = new Option<bool?>("--use-tabs")
-        {
-            Description =
-                "Indent with tabs instead of spaces. Pass false to force spaces even when the config file sets tabs.",
-        };
-
-        var endOfLine = new Option<EndOfLine?>("--end-of-line")
-        {
-            Description =
-                "Line ending of the output: Auto (default, follows the file), Lf or CrLf.",
-        };
-
-        var languageVersion = new Option<string?>("--language-version")
-        {
-            Description =
-                "The VB language version the parser assumes, e.g. 16.9 or latest (default).",
-        };
-
-        var noOrganizeImports = new Option<bool>("--no-organize-imports")
-        {
-            Description = "Leave the Imports statements untouched.",
-        };
-
-        var config = new Option<FileInfo?>("--config")
-        {
-            Description =
-                $"Path to a config file. Without it, {string.Join(", ", ConfigLocator.FileNames)} are searched for, walking up from each file's own directory to the nearest repository root.",
-        };
-
-        var ignorePath = new Option<string[]>("--ignore-path")
-        {
-            Description =
-                $"Path to a file of ignore patterns. Repeatable; replaces .gitignore and {string.Join("/", IgnoreFileNames)}.",
-            Arity = ArgumentArity.ZeroOrMore,
-        };
-
-        var noRespectGitignore = new Option<bool>("--no-respect-gitignore")
-        {
-            Description = "Do not read .gitignore.",
-        };
-
-        var noIgnore = new Option<bool>("--no-ignore")
-        {
-            Description = "Read no ignore file at all.",
-        };
-
-        var force = new Option<bool>("--force")
-        {
-            Description = $"Overwrite an existing {DefaultConfigFileName}.",
-        };
-
-        var init = new Command(
-            "init",
-            $"Write a {DefaultConfigFileName} with the default options into the working directory."
-        );
-        init.Options.Add(force);
-        init.SetAction(result =>
-            Guarded(() => RunInit(Directory.GetCurrentDirectory(), result.GetValue(force)))
-        );
-
         var root = new RootCommand("vbfmt - a formatter for VB.NET source.");
-        root.Subcommands.Add(init);
-        root.Arguments.Add(paths);
-        Option[] all =
-        [
-            check,
-            diff,
-            stdin,
-            write,
-            verbose,
-            summary,
-            printWidth,
-            indentSize,
-            useTabs,
-            endOfLine,
-            languageVersion,
-            noOrganizeImports,
-            config,
-            ignorePath,
-            noRespectGitignore,
-            noIgnore,
-        ];
-
-        foreach (var option in all)
-        {
-            root.Options.Add(option);
-        }
-
-        root.SetAction(result =>
-            Guarded(() =>
-            {
-                if (
-                    result.GetValue(write)
-                    && (result.GetValue(check) || result.GetValue(diff) || result.GetValue(stdin))
-                )
-                {
-                    Console.Error.WriteLine(
-                        "vbfmt: --write cannot be combined with --check, --diff or --stdin."
-                    );
-                    return ExitError;
-                }
-
-                var overrides = BuildOverrides(
-                    result.GetValue(printWidth),
-                    result.GetValue(indentSize),
-                    result.GetValue(useTabs),
-                    result.GetValue(endOfLine),
-                    result.GetValue(languageVersion),
-                    result.GetValue(noOrganizeImports)
-                );
-                var engine = new FormatterEngine(overrides, result.GetValue(config)?.FullName);
-
-                return result.GetValue(stdin)
-                    ? RunStdin(engine)
-                    : RunFiles(
-                        result.GetValue(paths) ?? [],
-                        Directory.GetCurrentDirectory(),
-                        DiscoverIgnores(
-                            Directory.GetCurrentDirectory(),
-                            result.GetValue(ignorePath) ?? [],
-                            !result.GetValue(noRespectGitignore),
-                            result.GetValue(noIgnore)
-                        ),
-                        engine,
-                        result.GetValue(write),
-                        result.GetValue(check),
-                        result.GetValue(diff),
-                        result.GetValue(verbose),
-                        result.GetValue(summary),
-                        Console.Out
-                    );
-            })
-        );
+        root.Subcommands.Add(CliCommands.CreateFormatCommand());
+        root.Subcommands.Add(CliCommands.CreateCheckCommand());
+        root.Subcommands.Add(CliCommands.CreateInitCommand());
 
         return root.Parse(args).Invoke();
     }
 
-    private static int Guarded(Func<int> action)
+    internal static int Guarded(Func<int> action)
     {
         try
         {
@@ -251,24 +78,6 @@ internal static class Program
         Console.Out.WriteLine($"{path}: created.");
         return ExitOk;
     }
-
-    private static OptionOverrides BuildOverrides(
-        int? printWidth,
-        int? indentSize,
-        bool? useTabs,
-        EndOfLine? endOfLine,
-        string? languageVersion,
-        bool noOrganizeImports
-    ) =>
-        new()
-        {
-            PrintWidth = printWidth,
-            IndentSize = indentSize,
-            UseTabs = useTabs,
-            EndOfLine = endOfLine,
-            LanguageVersion = languageVersion,
-            OrganizeImports = noOrganizeImports ? false : null,
-        };
 
     internal static IgnoreSet DiscoverIgnores(
         string baseDirectory,
@@ -304,7 +113,7 @@ internal static class Program
         return new IgnoreSet(files);
     }
 
-    private static int RunStdin(FormatterEngine engine)
+    internal static int RunStdin(FormatterEngine engine)
     {
         var result = engine.FormatStandardInput(Console.In.ReadToEnd());
         if (result.HasErrors)
@@ -322,9 +131,7 @@ internal static class Program
         string root,
         IgnoreSet ignores,
         FormatterEngine engine,
-        bool write,
-        bool check,
-        bool diff,
+        RunMode mode,
         bool verbose,
         bool summary,
         TextWriter output
@@ -364,26 +171,31 @@ internal static class Program
                 continue;
             }
 
-            if (!write && !check && !diff)
+            if (mode is RunMode.Check or RunMode.Diff)
             {
-                output.Write(result.Text);
+                if (!result.Changed)
+                {
+                    continue;
+                }
+
+                if (mode == RunMode.Diff)
+                {
+                    output.Write(UnifiedDiff.Create(file, source, result.Text));
+                }
+                else
+                {
+                    output.WriteLine($"{file}: would be reformatted.");
+                }
+
+                if (exitCode == ExitOk)
+                {
+                    exitCode = ExitWouldChange;
+                }
+
                 continue;
             }
 
-            if (!write && !result.Changed)
-            {
-                continue;
-            }
-
-            if (diff)
-            {
-                output.Write(UnifiedDiff.Create(file, source, result.Text));
-            }
-            else if (check)
-            {
-                output.WriteLine($"{file}: would be reformatted.");
-            }
-            else if (result.Changed)
+            if (result.Changed)
             {
                 File.WriteAllText(file, result.Text);
                 formatted++;
@@ -402,14 +214,9 @@ internal static class Program
                     );
                 }
             }
-
-            if ((check || diff) && exitCode == ExitOk)
-            {
-                exitCode = ExitWouldChange;
-            }
         }
 
-        if (write && summary && formatted + unchanged > 0)
+        if (mode == RunMode.Format && summary && formatted + unchanged > 0)
         {
             output.WriteLine(
                 $"{formatted} formatted, {unchanged} unchanged in {Millis(runStart)}ms"

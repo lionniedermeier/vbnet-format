@@ -62,7 +62,8 @@ internal static class VerbatimFormatter
     /// see <see cref="Xml.XmlWhitespace"/> for where XML draws that line.
     /// </summary>
     private static bool OwnsItsColumns(SyntaxNode node) =>
-        node.DescendantTokens().Any(token => token.Text.Contains('\n') || token.Text.Contains('\r'));
+        node.DescendantTokens()
+            .Any(token => token.Text.Contains('\n') || token.Text.Contains('\r'));
 
     /// <summary>Prints <paramref name="text"/> with its original columns. For disabled <c>#If</c> text.</summary>
     public static Doc Raw(string text) => Doc.Verbatim(SplitLines(text), VerbatimMode.Raw);

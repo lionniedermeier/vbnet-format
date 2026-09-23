@@ -315,6 +315,28 @@ public sealed class DocPrinterTests
         Assert.Equal("\n    <x>\n      <y/>\n    </x>", Print(doc));
     }
 
+    [Fact]
+    public void KeepsTrailingWhitespaceInsideAnAnchoredVerbatimRegion()
+    {
+        var doc = Doc.Indent(
+            Doc.HardLine,
+            Doc.Verbatim(["<t>", "a   ", "</t>"], VerbatimMode.Anchored)
+        );
+
+        Assert.Equal("\n    <t>\na   \n</t>", Print(doc));
+    }
+
+    [Fact]
+    public void TrimsTrailingWhitespaceInsideAPreservedVerbatimRegion()
+    {
+        var doc = Doc.Indent(
+            Doc.HardLine,
+            Doc.Verbatim(["<t>", "a   ", "</t>"], VerbatimMode.Preserve)
+        );
+
+        Assert.Equal("\n    <t>\n    a\n    </t>", Print(doc));
+    }
+
     /// <summary>
     /// Raw content owns its columns, the first line included -- the indent already written for it
     /// is taken back. Anything else would indent the region once more on every pass.

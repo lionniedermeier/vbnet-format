@@ -246,7 +246,7 @@ internal sealed class DocPrinter
         {
             if (i > 0)
             {
-                NewLine();
+                NewLine(trim: verbatim.Mode != VerbatimMode.Anchored);
 
                 // Raw keeps the original columns; the lines carry their own leading whitespace.
                 if (verbatim.Mode == VerbatimMode.Preserve)
@@ -498,9 +498,12 @@ internal sealed class DocPrinter
         _column = indent.Width;
     }
 
-    private void NewLine()
+    private void NewLine(bool trim = true)
     {
-        TrimTrailingWhitespace();
+        if (trim)
+        {
+            TrimTrailingWhitespace();
+        }
 
         _output.Append(_options.NewLine);
         _lineStart = _output.Length;

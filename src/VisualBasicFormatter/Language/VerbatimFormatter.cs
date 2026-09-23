@@ -35,19 +35,19 @@ internal static class VerbatimFormatter
             return Doc.Text(lines[0]);
         }
 
-        // Joining continued lines back together is always legal VB, so a node that carries nothing
-        // line-bound is reflowed onto one line -- which is what makes the fallback idempotent.
-        if (CanCollapse(node))
-        {
-            return Doc.Text(Collapse(lines));
-        }
-
         // Re-indenting means taking whitespace off the front of a line and putting the current
         // indent there instead. That is only sound while the whitespace is layout; where it is
         // content, the line has to stay in the column it was written at.
         if (OwnsItsColumns(node))
         {
             return Doc.Verbatim(lines, VerbatimMode.Anchored);
+        }
+
+        // Joining continued lines back together is always legal VB, so a node that carries nothing
+        // line-bound is reflowed onto one line -- which is what makes the fallback idempotent.
+        if (CanCollapse(node))
+        {
+            return Doc.Text(Collapse(lines));
         }
 
         return Doc.Verbatim(
@@ -62,16 +62,7 @@ internal static class VerbatimFormatter
     /// see <see cref="Xml.XmlWhitespace"/> for where XML draws that line.
     /// </summary>
     private static bool OwnsItsColumns(SyntaxNode node) =>
-        node.DescendantTokens()
-            .Any(token =>
-                token.Text.Contains('\n')
-                && token.Parent
-                    is XmlTextSyntax
-                        or XmlStringSyntax
-                        or XmlCDataSectionSyntax
-                        or XmlCommentSyntax
-                        or XmlProcessingInstructionSyntax
-            );
+        node.DescendantTokens().Any(token => token.Text.Contains('\n') || token.Text.Contains('\r'));
 
     /// <summary>Prints <paramref name="text"/> with its original columns. For disabled <c>#If</c> text.</summary>
     public static Doc Raw(string text) => Doc.Verbatim(SplitLines(text), VerbatimMode.Raw);

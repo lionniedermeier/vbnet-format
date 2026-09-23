@@ -68,6 +68,16 @@ internal sealed partial class VbDocVisitor
             _context
         );
 
+    public override Doc VisitTupleType(TupleTypeSyntax node) =>
+        VbDocBuilder.List(
+            node.OpenParenToken,
+            node.Elements,
+            node.CloseParenToken,
+            ListLayout.OnePerLine,
+            this,
+            _context
+        );
+
     /// <inheritdoc cref="VisitTypeParameterList"/>
     public override Doc VisitAttributeList(AttributeListSyntax node) =>
         VbDocBuilder.List(

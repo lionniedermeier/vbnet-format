@@ -196,6 +196,27 @@ internal sealed partial class VbDocVisitor
     public override Doc VisitCaseStatement(CaseStatementSyntax node) =>
         CaseStatementRule.Format(node, this, _context);
 
+    public override Doc VisitMethodStatement(MethodStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
+    public override Doc VisitSubNewStatement(SubNewStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
+    public override Doc VisitOperatorStatement(OperatorStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
+    public override Doc VisitDelegateStatement(DelegateStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
+    public override Doc VisitDeclareStatement(DeclareStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
+    public override Doc VisitPropertyStatement(PropertyStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
+    public override Doc VisitEventStatement(EventStatementSyntax node) =>
+        SignatureRule.Format(node, this, _context);
+
     public override Doc VisitHandlesClause(HandlesClauseSyntax node) =>
         SignatureClauseRule.Format(node, node.HandlesKeyword, node.Events, this, _context);
 

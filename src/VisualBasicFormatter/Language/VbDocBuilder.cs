@@ -84,6 +84,32 @@ internal static class VbDocBuilder
         return Run(Items(Doc.Nothing, elements, separators, context));
     }
 
+    public static Doc Bracketed<T>(
+        SyntaxToken open,
+        SeparatedSyntaxList<T> list,
+        SyntaxToken close,
+        ListLayout layout,
+        VbDocVisitor visitor,
+        FormatContext context
+    )
+        where T : SyntaxNode
+    {
+        var (elements, separators) = ToArrays(list, visitor);
+
+        if (elements.IsEmpty)
+        {
+            return Doc.Concat(context.Token(open), context.Token(close));
+        }
+
+        return Bracketed(
+            open,
+            Items(Doc.Nothing, elements, separators, context),
+            close,
+            layout,
+            context
+        );
+    }
+
     private static (
         ImmutableArray<Doc> Elements,
         ImmutableArray<SyntaxToken> Separators

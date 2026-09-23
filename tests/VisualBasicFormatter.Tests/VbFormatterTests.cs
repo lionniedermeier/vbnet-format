@@ -1185,6 +1185,55 @@ public sealed class VbFormatterTests
         Assert.Equal(Indent(lines[head]) + 8, Indent(lines[head + 1]));
     }
 
+    [Fact]
+    public void KeepsTheTypeParametersFlatWhileTheParametersBreak()
+    {
+        var lines = Lines("GenericSignature");
+
+        Assert.Contains(
+            lines,
+            l =>
+                l.Trim()
+                == "Public Function BreaksParametersBeforeTypeParameters(Of TValue, CValue, KValue)("
+        );
+    }
+
+    [Fact]
+    public void KeepsAGenericReturnTypeFlatOnceTheParametersBreak()
+    {
+        var lines = Lines("GenericSignature");
+
+        var open = Array.FindIndex(
+            lines,
+            l => l.Trim() == "Public Function BreaksParametersBeforeGenericReturnType("
+        );
+
+        Assert.True(open >= 0);
+        Assert.Equal("paramA As Integer, paramB As Integer", lines[open + 1].Trim());
+        Assert.Equal(
+            ") As Tuple(Of LongTypeName___________, LongTypeName___________, LongTypeName___________)",
+            lines[open + 2].Trim()
+        );
+    }
+
+    [Fact]
+    public void BreaksATupleReturnTypeOneElementPerLine()
+    {
+        var lines = Lines("GenericSignature");
+
+        var open = Array.FindIndex(
+            lines,
+            l => l.Trim() == "Public Function BreaksTupleReturnTypeOneElementPerLine("
+        );
+
+        Assert.True(open >= 0);
+        Assert.Equal(
+            "ParamA As VeryLongTypeName________________________,",
+            lines[open + 3].Trim()
+        );
+        Assert.Equal(")", lines[open + 6].Trim());
+    }
+
     private static string[] Lines(string name) =>
         VbFormatter.Format(TestCases.ReadInput(name)).Text.ReplaceLineEndings("\n").Split('\n');
 

@@ -52,8 +52,10 @@ jobs:
         with:
           global-json-file: global.json
 
-      # The formatter's own C#, held to its own .editorconfig.
-      - run: dotnet format --verify-no-changes
+      - run: dotnet tool restore
+
+      # The formatter's own C#, held to its own csharpier config (.csharpierrc).
+      - run: dotnet csharpier check .
 
   pack:
     name: pack

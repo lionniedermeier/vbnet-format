@@ -1,5 +1,4 @@
 Module Compact
-
     Public Sub Run()
         Dim first = 1
         Dim second = 2
@@ -7,5 +6,4 @@ Module Compact
         Console.WriteLine(first)
         Console.WriteLine(second)
     End Sub
-
 End Module

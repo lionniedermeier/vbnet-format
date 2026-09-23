@@ -1,7 +1,6 @@
 Imports System.Xml.Linq
 
 Module Reports
-
     Public Function Build(departments As IEnumerable(Of Department)) As XElement
         Dim xml =
             <departments>
@@ -26,5 +25,4 @@ Module Reports
 
         Return xml
     End Function
-
 End Module

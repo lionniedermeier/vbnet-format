@@ -1,5 +1,4 @@
 Module Setup
-
     Public Sub Configure(ByVal collectionType As CollectionType)
         With collectionType
             If .Prop Then
@@ -23,5 +22,4 @@ Module Setup
             End With
         End With
     End Sub
-
 End Module

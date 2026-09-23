@@ -2,7 +2,6 @@ Imports System.Xml.Linq
 
 ' The three steps a literal is wrapped in, and the one shortcut past the middle of them.
 Module Wrapping
-
     Public Sub Run()
         Dim fits = <person id="42" name="Alice"/>
 
@@ -17,5 +16,4 @@ Module Wrapping
                     city="Berlin"/>
             </person>
     End Sub
-
 End Module

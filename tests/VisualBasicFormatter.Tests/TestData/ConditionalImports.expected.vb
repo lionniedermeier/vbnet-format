@@ -10,8 +10,6 @@ Imports EventSymbolAdapter = Microsoft.CodeAnalysis.VisualBasic.Symbols.EventSym
 #End If
 
 Namespace Demo.NoPia
-
     Friend NotInheritable Class Embedded
     End Class
-
 End Namespace

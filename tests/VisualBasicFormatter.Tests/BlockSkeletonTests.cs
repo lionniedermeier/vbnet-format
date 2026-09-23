@@ -179,11 +179,14 @@ public sealed class BlockSkeletonTests
     public void CollapsesMultipleBlankLinesIntoOne()
     {
         const string Source =
-            "Module M\r\n\r\n\r\n\r\n    Sub S()\r\n    End Sub\r\n\r\nEnd Module\r\n";
+            "Module M\r\n    Sub S()\r\n        Dim a = 1\r\n\r\n\r\n\r\n        Dim b = 2\r\n    End Sub\r\nEnd Module\r\n";
 
         var (_, after) = Format(Source);
 
-        Assert.Equal("Module M\r\n\r\n    Sub S()\r\n    End Sub\r\n\r\nEnd Module\r\n", after);
+        Assert.Equal(
+            "Module M\r\n    Sub S()\r\n        Dim a = 1\r\n\r\n        Dim b = 2\r\n    End Sub\r\nEnd Module\r\n",
+            after
+        );
     }
 
     /// <summary>

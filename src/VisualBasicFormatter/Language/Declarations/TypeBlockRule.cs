@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using VisualBasicFormatter.Language.Statements;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language.Declarations;
@@ -12,15 +11,12 @@ internal static class TypeBlockRule
 {
     /// <summary>Prints <paramref name="node"/>.</summary>
     public static Doc Format(TypeBlockSyntax node, VbDocVisitor visitor, FormatContext context) =>
-        Doc.Concat(
+        MemberSpacingRule.Format(
             visitor.Format(node.BlockStatement),
-            Doc.Indent(
-                Doc.Concat(
-                    StatementListRule.Format(node.Inherits, visitor, context),
-                    StatementListRule.Format(node.Implements, visitor, context),
-                    StatementListRule.Format(node.Members, visitor, context)
-                )
-            ),
-            StatementListRule.Format(node.EndBlockStatement, visitor, context)
+            [.. node.Inherits, .. node.Implements],
+            node.Members,
+            node.EndBlockStatement,
+            visitor,
+            context
         );
 }

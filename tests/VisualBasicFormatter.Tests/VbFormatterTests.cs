@@ -233,8 +233,8 @@ public sealed class VbFormatterTests
         var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
 
         // Plain property hops stay together; only the invoked links break.
-        Assert.Equal("        Dim companies = State.Companies.Values.", lines[3]);
-        Assert.Equal("            Where(AddressOf FilterDivision).", lines[4]);
+        Assert.Equal("        Dim companies = State.Companies.Values.", lines[2]);
+        Assert.Equal("            Where(AddressOf FilterDivision).", lines[3]);
     }
 
     /// <summary>

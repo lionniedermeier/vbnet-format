@@ -1,7 +1,6 @@
 Imports System.Linq
 
 Public Class QueryDemo
-
     Public Sub Run(employees As List(Of Employee))
         ' A query breaks in front of the keyword that opens the next clause -- the one place VB
         ' continues implicitly before a token rather than after it.
@@ -22,5 +21,4 @@ Public Class QueryDemo
         Dim quarterlyHeadcountByDepartment =
             From employee In employees Where employee.IsActive Select employee.Name, employee.Department
     End Sub
-
 End Class

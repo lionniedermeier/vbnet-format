@@ -1,5 +1,4 @@
 Module CaseClauses
-
     Public Function Describe(ByVal feature As Feature) As Boolean
         Select Case feature
             Case Feature.AutoProperties,
@@ -16,5 +15,4 @@ Module CaseClauses
                 Return False
         End Select
     End Function
-
 End Module

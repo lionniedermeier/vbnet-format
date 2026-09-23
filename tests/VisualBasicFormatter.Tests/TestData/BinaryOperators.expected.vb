@@ -1,5 +1,4 @@
 Module Conditions
-
     Public Function Describe(ByVal candidate As Contract) As String
         If candidate.IsActive AndAlso
                 candidate.HasValidSignature AndAlso
@@ -17,5 +16,4 @@ Module Conditions
 
         Return String.Empty
     End Function
-
 End Module

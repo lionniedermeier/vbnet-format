@@ -1,5 +1,4 @@
 Module Annotated
-
     Public Sub Emit() ' entry point
         Dim line As String = String.Format(
             "{0} {1} {2} {3} {4}",
@@ -20,5 +19,4 @@ Module Annotated
             beta
         )
     End Sub
-
 End Module

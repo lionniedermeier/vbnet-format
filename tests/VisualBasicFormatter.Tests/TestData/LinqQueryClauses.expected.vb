@@ -1,7 +1,6 @@
 Imports System.Linq
 
 Public Class QueryClauses
-
     Public Sub Run(employees As List(Of Employee), departments As List(Of Department))
         ' Join and Group Join are clause heads like any other, so they align under From too.
         Dim staffing =
@@ -50,5 +49,4 @@ Public Class QueryClauses
             Aggregate employee In employees Into Headcount = Count()
             Select department.Name, Headcount
     End Sub
-
 End Class

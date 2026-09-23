@@ -28,5 +28,4 @@ Public Class SingleWorker
 
     Public Sub Run() Implements IWorker.Run
     End Sub
-
 End Class

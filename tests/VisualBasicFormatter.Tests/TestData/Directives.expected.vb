@@ -1,5 +1,4 @@
 Module Switches
-
 #Region "Setup"
 
     Public Sub Configure()
@@ -9,7 +8,6 @@ Module Switches
         Trace.Listeners.Clear()
 #End If
     End Sub
-
 #End Region
 
 End Module

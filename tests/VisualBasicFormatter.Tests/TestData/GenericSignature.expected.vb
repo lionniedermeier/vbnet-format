@@ -50,9 +50,7 @@ Module Calculations
 End Module
 
 Public Interface ICalculator
-
     Function LongInterfaceMethodSignature(Of TValue, CValue, KValue)(
         paramA As Integer, paramB As Integer
     ) As Tuple(Of TValue, CValue, KValue)
-
 End Interface

@@ -5,9 +5,7 @@ Imports System
 Imports System.Text
 
 Module Banner
-
     Sub Show()
         Console.WriteLine("Hello")
     End Sub
-
 End Module

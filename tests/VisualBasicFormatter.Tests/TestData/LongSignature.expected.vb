@@ -1,5 +1,4 @@
 Module Calculations
-
     Public Function CalculateWeightedAverage(
         ByVal firstMeasurement As Double,
         ByVal secondMeasurement As Double,
@@ -8,5 +7,4 @@ Module Calculations
     ) As Double
         Return (firstMeasurement * firstWeight + secondMeasurement * secondWeight) / (firstWeight + secondWeight)
     End Function
-
 End Module

@@ -36,12 +36,10 @@ Public Class Employee
 End Class
 
 Public Module EmployeeExtensions
-
     <Extension>
     Public Function HasUsefulName(employee As Employee) As Boolean
         Return employee IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(employee.Name)
     End Function
-
 End Module
 
 Public Enum Level

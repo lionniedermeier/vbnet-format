@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using VisualBasicFormatter.Language.Statements;
+using VisualBasicFormatter.Language.Declarations;
 using VisualBasicFormatter.Printing;
 
 namespace VisualBasicFormatter.Language.Module;
@@ -23,6 +23,7 @@ internal static class CompilationUnitRule
             .Concat(node.Members)
             .ToList();
 
+        var firstDeclaration = members.Count - node.Members.Count;
         var parts = ImmutableArray.CreateBuilder<Doc>();
 
         for (var index = 0; index < members.Count; index++)
@@ -31,7 +32,11 @@ internal static class CompilationUnitRule
             // are printed by the member itself.
             if (index > 0)
             {
-                parts.Add(context.Separator(members[index]));
+                parts.Add(
+                    index > firstDeclaration
+                        ? MemberSpacingRule.Between(members[index - 1], members[index], context)
+                        : context.Separator(members[index])
+                );
             }
 
             parts.Add(visitor.Format(members[index]));

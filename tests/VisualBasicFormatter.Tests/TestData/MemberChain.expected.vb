@@ -1,5 +1,4 @@
 Module Selection
-
     Public Sub Collect()
         Dim companies = State.Companies.Values.
             Where(AddressOf FilterDivision).
@@ -11,5 +10,4 @@ Module Selection
                     visited.Contains(State.Companies(g.MergerId))
             )
     End Sub
-
 End Module

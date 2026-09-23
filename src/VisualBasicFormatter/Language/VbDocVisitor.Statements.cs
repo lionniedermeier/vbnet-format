@@ -19,8 +19,9 @@ internal sealed partial class VbDocVisitor
 
     /// <inheritdoc/>
     public override Doc VisitNamespaceBlock(NamespaceBlockSyntax node) =>
-        BlockRule.Format(
+        MemberSpacingRule.Format(
             Format(node.NamespaceStatement),
+            [],
             node.Members,
             node.EndNamespaceStatement,
             this,

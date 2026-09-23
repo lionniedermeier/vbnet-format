@@ -1,5 +1,4 @@
 Module Reporting
-
     Public Sub Emit()
         ' Too wide for the statement's line, but the arguments still fit on one indented line of
         ' their own -- so they take it, and the bracket closes below them.
@@ -39,5 +38,4 @@ Module Reporting
                 .Status = currentStatus
             })
     End Sub
-
 End Module

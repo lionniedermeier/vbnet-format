@@ -34,6 +34,11 @@ internal sealed partial class VbDocVisitor : VisualBasicSyntaxVisitor<Doc>
             return Doc.Nothing;
         }
 
+        if (node is not CompilationUnitSyntax && _context.IsIgnored(node))
+        {
+            return VerbatimFormatter.FormatIgnored(node, _context);
+        }
+
         // A comment inside an expression has nowhere else to go, so that expression is reproduced
         // rather than rebuilt. Statements are exempt: their comments sit above whole lines, which
         // the block rules place correctly.

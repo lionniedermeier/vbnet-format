@@ -1231,6 +1231,132 @@ public sealed class VbFormatterTests
         Assert.Equal(")", lines[open + 6].Trim());
     }
 
+    [Fact]
+    public void LeavesAnIgnoredNodeAsWritten()
+    {
+        const string Source = """
+            Module M
+
+              ' vbfmt-ignore
+              Public Sub Weird(      )
+                      Dim x =     1
+              End Sub
+
+            End Module
+
+            """;
+
+        var result = VbFormatter.Format(Source.ReplaceLineEndings("\r\n"));
+        Assert.False(result.HasErrors, string.Join("; ", result.Diagnostics));
+
+        var lines = result.Text.ReplaceLineEndings("\n").Split('\n');
+
+        Assert.Contains(lines, l => l == "    ' vbfmt-ignore");
+        Assert.Contains(lines, l => l == "    Public Sub Weird(      )");
+        Assert.Contains(lines, l => l == "          Dim x =     1");
+        Assert.Contains(lines, l => l == "  End Sub");
+    }
+
+    [Fact]
+    public void IgnoresOnlyTheNodeTheMarkerPrecedes()
+    {
+        const string Source = """
+            Module M
+
+                Public Sub S()
+                    ' vbfmt-ignore
+                    Dim   a    =    1
+                    Dim   b    =    2
+                End Sub
+
+            End Module
+
+            """;
+
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
+
+        Assert.Contains(lines, l => l == "        Dim   a    =    1");
+        Assert.Contains(lines, l => l == "        Dim b = 2");
+    }
+
+    [Fact]
+    public void DoesNotIgnoreTheWholeFileForAMarkerOnTheFirstStatement()
+    {
+        const string Source = """
+            ' vbfmt-ignore
+            Option Strict    On
+
+            Module M
+                Public Sub S(   )
+                    Dim   a   =   1
+                End Sub
+            End Module
+
+            """;
+
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
+
+        Assert.Contains(lines, l => l == "Option Strict    On");
+        Assert.Contains(lines, l => l == "    Public Sub S()");
+        Assert.Contains(lines, l => l == "        Dim a = 1");
+    }
+
+    [Fact]
+    public void RecognizesTheMarkerWithRemAndAnyCase()
+    {
+        const string Source = """
+            Module M
+
+                Public Sub S()
+                    REM VBFMT-IGNORE
+                    Dim   a    =    1
+                End Sub
+
+            End Module
+
+            """;
+
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
+
+        Assert.Contains(lines, l => l == "        REM VBFMT-IGNORE");
+        Assert.Contains(lines, l => l == "        Dim   a    =    1");
+    }
+
+    [Fact]
+    public void DoesNotTreatASimilarCommentAsTheMarker()
+    {
+        const string Source = """
+            Module M
+
+                Public Sub S()
+                    ' vbfmt-ignored
+                    Dim   a    =    1
+                    ' see vbfmt-ignore
+                    Dim   b    =    2
+                End Sub
+
+            End Module
+
+            """;
+
+        var lines = VbFormatter
+            .Format(Source.ReplaceLineEndings("\r\n"))
+            .Text.ReplaceLineEndings("\n")
+            .Split('\n');
+
+        Assert.Contains(lines, l => l == "        Dim a = 1");
+        Assert.Contains(lines, l => l == "        Dim b = 2");
+    }
+
     private static string[] Lines(string name) =>
         VbFormatter.Format(TestCases.ReadInput(name)).Text.ReplaceLineEndings("\n").Split('\n');
 

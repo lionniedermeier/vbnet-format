@@ -13,6 +13,7 @@ internal sealed class FormatContext
 {
     private readonly Lazy<SourceText> _text;
     private readonly ContentTrivia _contentTrivia;
+    private readonly IgnoreMarkers _ignoreMarkers;
 
     public FormatContext(FormatterOptions options, SyntaxNode root, string newLine)
     {
@@ -21,6 +22,7 @@ internal sealed class FormatContext
 
         _text = new Lazy<SourceText>(() => root.SyntaxTree.GetText());
         _contentTrivia = ContentTrivia.Build(root);
+        _ignoreMarkers = IgnoreMarkers.Build(root);
         Unbreakable = UnbreakableSpans.Build(root);
 
         PrintOptions = new PrintOptions
@@ -188,6 +190,8 @@ internal sealed class FormatContext
     /// comment does not move onto the wrong line.
     /// </summary>
     public bool MustPrintVerbatim(SyntaxNode node) => _contentTrivia.Intersects(node.Span);
+
+    public bool IsIgnored(SyntaxNode node) => _ignoreMarkers.IsIgnored(node);
 
     public Doc HardBreakAfter(SyntaxToken token) =>
         ContinuationPoints.IsImplicitAfter(token, Unbreakable) ? Doc.HardLine : Doc.Space;

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using VisualBasicFormatter.Printing;
@@ -25,6 +26,39 @@ internal static class VerbatimFormatter
             Body(node, context),
             TriviaPrinter.Trailing(node.GetLastToken(), context)
         );
+
+    public static Doc FormatIgnored(SyntaxNode node, FormatContext context)
+    {
+        var first = node.GetFirstToken();
+        var trivia = first.LeadingTrivia;
+        var markerIndex = IgnoreMarkers.MarkerIndex(trivia);
+
+        var leading = TriviaPrinter.Leading(trivia, markerIndex + 1, context);
+        var start = RegionStart(trivia, markerIndex, node);
+        var lines = SplitLines(context.Text.ToString(TextSpan.FromBounds(start, node.Span.End)));
+
+        return Doc.Concat(
+            leading,
+            Doc.Verbatim(lines, VerbatimMode.Anchored),
+            TriviaPrinter.Trailing(node.GetLastToken(), context)
+        );
+    }
+
+    private static int RegionStart(SyntaxTriviaList trivia, int markerIndex, SyntaxNode node)
+    {
+        for (var i = markerIndex + 1; i < trivia.Count; i++)
+        {
+            if (
+                !trivia[i].IsKind(SyntaxKind.WhitespaceTrivia)
+                && !trivia[i].IsKind(SyntaxKind.EndOfLineTrivia)
+            )
+            {
+                return trivia[i].FullSpan.Start;
+            }
+        }
+
+        return node.SpanStart;
+    }
 
     private static Doc Body(SyntaxNode node, FormatContext context)
     {

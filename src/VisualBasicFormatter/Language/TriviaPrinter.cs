@@ -19,13 +19,14 @@ internal static class TriviaPrinter
     /// first of them belong to the enclosing list and are reported by
     /// <see cref="BlankLinesBefore(SyntaxToken)"/> instead.
     /// </summary>
-    public static Doc Leading(SyntaxToken token, FormatContext context)
-    {
-        var trivia = token.LeadingTrivia;
+    public static Doc Leading(SyntaxToken token, FormatContext context) =>
+        Leading(token.LeadingTrivia, token.LeadingTrivia.Count, context);
 
+    public static Doc Leading(SyntaxTriviaList trivia, int count, FormatContext context)
+    {
         // The overwhelmingly common case: indentation and blank lines only, nothing to print above
         // the token. Answered without allocating a builder.
-        if (!HasPrintableTrivia(trivia))
+        if (!HasPrintableTrivia(trivia, count))
         {
             return Doc.Nothing;
         }
@@ -34,7 +35,7 @@ internal static class TriviaPrinter
         var blankLines = 0;
         var written = false;
 
-        for (var i = 0; i < trivia.Count; i++)
+        for (var i = 0; i < count; i++)
         {
             var current = trivia[i];
 
@@ -116,10 +117,15 @@ internal static class TriviaPrinter
         || statement.GetLastToken() != token;
 
     /// <summary>Whether any trivium would print something -- a comment, a directive, disabled text.</summary>
-    private static bool HasPrintableTrivia(SyntaxTriviaList trivia)
+    private static bool HasPrintableTrivia(SyntaxTriviaList trivia) =>
+        HasPrintableTrivia(trivia, trivia.Count);
+
+    private static bool HasPrintableTrivia(SyntaxTriviaList trivia, int count)
     {
-        foreach (var trivium in trivia)
+        for (var i = 0; i < count; i++)
         {
+            var trivium = trivia[i];
+
             if (
                 trivium.IsDirective
                 || trivium.IsKind(SyntaxKind.CommentTrivia)

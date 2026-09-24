@@ -22,7 +22,12 @@ internal static class TriviaPrinter
     public static Doc Leading(SyntaxToken token, FormatContext context) =>
         Leading(token.LeadingTrivia, token.LeadingTrivia.Count, context);
 
-    public static Doc Leading(SyntaxTriviaList trivia, int count, FormatContext context)
+    public static Doc Leading(
+        SyntaxTriviaList trivia,
+        int count,
+        FormatContext context,
+        int blankAfter = -1
+    )
     {
         // The overwhelmingly common case: indentation and blank lines only, nothing to print above
         // the token. Answered without allocating a builder.
@@ -34,6 +39,7 @@ internal static class TriviaPrinter
         var parts = ImmutableArray.CreateBuilder<Doc>();
         var blankLines = 0;
         var written = false;
+        var lastContentIndex = -1;
 
         for (var i = 0; i < count; i++)
         {
@@ -56,17 +62,20 @@ internal static class TriviaPrinter
 
             if (written)
             {
-                parts.Add(blankLines > 0 ? Doc.EmptyLine : Doc.HardLine);
+                var forced = lastContentIndex < blankAfter && i >= blankAfter;
+                parts.Add(blankLines > 0 || forced ? Doc.EmptyLine : Doc.HardLine);
             }
 
             parts.Add(content);
             blankLines = 0;
             written = true;
+            lastContentIndex = i;
         }
 
         if (written)
         {
-            parts.Add(blankLines > 0 ? Doc.EmptyLine : Doc.HardLine);
+            var forced = lastContentIndex < blankAfter;
+            parts.Add(blankLines > 0 || forced ? Doc.EmptyLine : Doc.HardLine);
         }
 
         return Doc.Concat(parts.DrainToImmutable());

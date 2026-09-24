@@ -134,7 +134,8 @@ internal static class Program
         RunMode mode,
         bool verbose,
         bool summary,
-        TextWriter output
+        TextWriter output,
+        FormatCache? cache = null
     )
     {
         var matched = Resolve(paths).ToList();
@@ -162,12 +163,27 @@ internal static class Program
         {
             var fileStart = Stopwatch.GetTimestamp();
             var source = File.ReadAllText(file);
+            var options = cache is null ? null : engine.OptionsFor(file);
+            var checksum = cache is null ? null : FormatCache.Checksum(source, options!);
+
+            if (cache is not null && cache.IsUpToDate(file, checksum!))
+            {
+                unchanged++;
+                if (verbose)
+                {
+                    output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms (cached)");
+                }
+
+                continue;
+            }
+
             var result = engine.Format(file, source);
 
             if (result.HasErrors)
             {
                 Report(file, result);
                 exitCode = ExitError;
+                cache?.Forget(file);
                 continue;
             }
 
@@ -199,6 +215,7 @@ internal static class Program
             {
                 File.WriteAllText(file, result.Text);
                 formatted++;
+                cache?.Record(file, FormatCache.Checksum(result.Text, options!));
                 if (verbose)
                 {
                     output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms");
@@ -207,6 +224,7 @@ internal static class Program
             else
             {
                 unchanged++;
+                cache?.Record(file, checksum!);
                 if (verbose)
                 {
                     output.WriteLine(
@@ -215,6 +233,8 @@ internal static class Program
                 }
             }
         }
+
+        cache?.Save();
 
         if (mode == RunMode.Format && summary && formatted + unchanged > 0)
         {

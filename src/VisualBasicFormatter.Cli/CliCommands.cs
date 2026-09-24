@@ -26,11 +26,17 @@ internal static class CliCommands
             Description = "Print how many files were formatted and how long the run took.",
         };
 
+        var noCache = new Option<bool>("--no-cache")
+        {
+            Description = "Neither read nor write the format cache.",
+        };
+
         var command = new Command("format", "Format files in place.");
         command.Arguments.Add(paths);
         command.Options.Add(stdin);
         command.Options.Add(verbose);
         command.Options.Add(summary);
+        command.Options.Add(noCache);
         shared.AddTo(command);
 
         command.SetAction(result =>
@@ -48,7 +54,8 @@ internal static class CliCommands
                         RunMode.Format,
                         result.GetValue(verbose),
                         result.GetValue(summary),
-                        Console.Out
+                        Console.Out,
+                        result.GetValue(noCache) ? null : FormatCache.Load(FormatCache.DefaultPath)
                     );
             })
         );

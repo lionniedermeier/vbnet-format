@@ -157,17 +157,20 @@ public sealed class FormatCommandTests : IDisposable
         TextWriter output,
         RunMode mode = RunMode.Format,
         bool verbose = false,
-        bool summary = false
+        bool summary = false,
+        FormatCache? cache = null,
+        OptionOverrides? overrides = null
     ) =>
         Program.RunFiles(
             [_root],
             _root,
             IgnoreSet.Empty,
-            new FormatterEngine(new OptionOverrides()),
+            new FormatterEngine(overrides ?? new OptionOverrides()),
             mode,
             verbose,
             summary,
-            output
+            output,
+            cache
         );
 
     private static string[] Lines(TextWriter output) =>

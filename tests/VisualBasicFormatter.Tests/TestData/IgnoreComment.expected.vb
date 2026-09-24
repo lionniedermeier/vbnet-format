@@ -1,5 +1,4 @@
 Module IgnoreComment
-
     ' vbfmt-ignore
     ''' <summary>
   ''' This documentation and the method should not be formatted.

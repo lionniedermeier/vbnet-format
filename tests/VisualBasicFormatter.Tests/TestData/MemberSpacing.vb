@@ -87,3 +87,68 @@ End Class
 Public Class Second
     Private _b As Integer
 End Class
+
+Public Class PropertyOnly
+    Public Property Id As Integer
+    Public Property Name As String
+    Public Property CreatedAt As DateTime
+End Class
+
+Public Structure PropertyOnlyStruct
+    Public Property X As Integer
+    Public Property Y As Integer
+End Structure
+
+Public Class ImplementsPropertyOnly
+    Implements IWorker
+    Public Property Total As Integer Implements IWorker.Total
+    Public Property Name As String
+End Class
+
+Public Class DocumentedProperties
+    ''' <summary>
+    ''' An xml doccomment
+    ''' </summary>
+    Public Property Some As String
+
+    ''' <summary>
+    ''' An xml doccomment
+    ''' </summary>
+    Public Property Other As String
+End Class
+
+Public Class MixedPropertyAndField
+    Public Property Id As Integer
+    Private _cache As Integer
+End Class
+
+Public Class DocumentedFirstMember
+    ''' <summary>
+    ''' An xml doccomment
+    ''' </summary>
+    Public Sub Run()
+    End Sub
+
+    Private _count As Integer
+End Class
+
+Public Structure DocumentedFirstField
+    ''' <summary>
+    ''' An xml doccomment
+    ''' </summary>
+    Public X As Integer
+
+    Public Y As Integer
+End Structure
+
+Public Class ImplementsDocumentedFirstMember
+    Implements IWorker
+
+    ''' <summary>
+    ''' An xml doccomment
+    ''' </summary>
+    Public Sub Run() Implements IWorker.Run
+    End Sub
+
+    Private _count As Integer
+End Class

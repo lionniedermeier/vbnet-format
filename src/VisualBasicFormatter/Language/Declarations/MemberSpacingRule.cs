@@ -18,6 +18,8 @@ internal static class MemberSpacingRule
     {
         using var body = new DocListBuilder(2 * (preamble.Count + members.Count));
 
+        var padded = members.Count > 1 && !AllProperties(members);
+
         StatementSyntax? previous = null;
 
         foreach (var statement in preamble)
@@ -29,7 +31,7 @@ internal static class MemberSpacingRule
 
         foreach (var member in members)
         {
-            body.Add(BeforeMember(previous, member, members.Count, context));
+            body.Add(BeforeMember(previous, member, padded, context));
             body.Add(visitor.Format(member));
             previous = member;
         }
@@ -37,7 +39,7 @@ internal static class MemberSpacingRule
         return Doc.Concat(
             header,
             Doc.Indent(body.ToDoc()),
-            BeforeFooter(members.Count),
+            BeforeFooter(padded),
             visitor.Format(footer)
         );
     }
@@ -48,18 +50,30 @@ internal static class MemberSpacingRule
     private static Doc BeforeMember(
         StatementSyntax? previous,
         StatementSyntax member,
-        int memberCount,
+        bool padded,
         FormatContext context
     ) =>
         previous switch
         {
-            null => memberCount > 1 ? Doc.EmptyLine : Doc.HardLine,
+            null => padded && !IsDocumented(member) ? Doc.EmptyLine : Doc.HardLine,
             InheritsStatementSyntax or ImplementsStatementSyntax => Doc.EmptyLine,
             _ => Between(previous, member, context),
         };
 
-    private static Doc BeforeFooter(int memberCount) =>
-        memberCount > 1 ? Doc.EmptyLine : Doc.HardLine;
+    private static Doc BeforeFooter(bool padded) => padded ? Doc.EmptyLine : Doc.HardLine;
+
+    private static bool AllProperties(SyntaxList<StatementSyntax> members)
+    {
+        foreach (var member in members)
+        {
+            if (member is not PropertyStatementSyntax)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     private static bool IsSeparated(SyntaxNode member) =>
         member

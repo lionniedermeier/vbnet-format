@@ -18,7 +18,6 @@ public sealed class BlockSkeletonTests
         Imports System
 
         Namespace Contoso.Sample
-
             ''' <summary>Does things.</summary>
             ''' <remarks>And documents them.</remarks>
             Public Class Worker

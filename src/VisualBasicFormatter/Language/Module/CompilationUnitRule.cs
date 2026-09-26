@@ -71,7 +71,12 @@ internal static class CompilationUnitRule
         return Doc.Concat(parts.DrainToImmutable());
     }
 
-    private static FileSection SectionOf(int index, int optionsEnd, int importsEnd, int attributesEnd) =>
+    private static FileSection SectionOf(
+        int index,
+        int optionsEnd,
+        int importsEnd,
+        int attributesEnd
+    ) =>
         index < optionsEnd ? FileSection.Options
         : index < importsEnd ? FileSection.Imports
         : index < attributesEnd ? FileSection.Attributes

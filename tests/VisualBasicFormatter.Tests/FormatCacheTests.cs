@@ -128,6 +128,39 @@ public sealed class FormatCacheTests : IDisposable
     }
 
     [Fact]
+    public void RecordsFromManyThreadsAreAllPersisted()
+    {
+        var files = Enumerable.Range(0, 200).Select(i => $"file{i}.vb").ToList();
+        var cache = FormatCache.Load(_cachePath);
+
+        Parallel.ForEach(files, file => cache.Record(file, "ABCDEF0123456789"));
+        cache.Save();
+
+        var reloaded = FormatCache.Load(_cachePath);
+        Assert.All(files, file => Assert.True(reloaded.IsUpToDate(file, "ABCDEF0123456789")));
+    }
+
+    [Fact]
+    public void ASecondParallelRunReportsEveryFileAsCached()
+    {
+        var directory = Path.Combine(_root, "src");
+        Directory.CreateDirectory(directory);
+        for (var i = 0; i < 40; i++)
+        {
+            Write(directory, $"Sample{i}.vb", Unformatted);
+        }
+
+        Run(directory);
+        var output = new StringWriter();
+        Run(directory, output);
+
+        for (var i = 0; i < 40; i++)
+        {
+            Assert.Contains("(cached)", Line(output, $"Sample{i}.vb"));
+        }
+    }
+
+    [Fact]
     public void NoCacheIsOnlyOnTheFormatCommand()
     {
         var formatResult = CliCommands.CreateFormatCommand().Parse(["--no-cache"]);

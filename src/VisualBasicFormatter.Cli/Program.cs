@@ -12,6 +12,23 @@ internal enum RunMode
     Diff,
 }
 
+internal enum FileStatus
+{
+    Cached,
+    Error,
+    Unchanged,
+    Formatted,
+    WouldChange,
+}
+
+internal sealed record FileOutcome(
+    string File,
+    FileStatus Status,
+    long Millis,
+    string? Source,
+    FormatResult? Result
+);
+
 internal static class Program
 {
     internal const int ExitOk = 0;
@@ -60,6 +77,24 @@ internal static class Program
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             Console.Error.WriteLine($"vbfmt: {ex.Message}");
+            return ExitError;
+        }
+        catch (AggregateException ex)
+            when (ex.Flatten()
+                    .InnerExceptions.All(inner =>
+                        inner is IOException or UnauthorizedAccessException or InvalidDataException
+                    )
+            )
+        {
+            foreach (
+                var message in ex.Flatten()
+                    .InnerExceptions.Select(inner => inner.Message)
+                    .Distinct()
+            )
+            {
+                Console.Error.WriteLine($"vbfmt: {message}");
+            }
+
             return ExitError;
         }
     }
@@ -158,79 +193,73 @@ internal static class Program
         var unchanged = 0;
         var runStart = Stopwatch.GetTimestamp();
 
-        // TODO: parallelize this loop
-        foreach (var file in files)
+        var outcomes = files
+            .AsParallel()
+            .AsOrdered()
+            .WithMergeOptions(ParallelMergeOptions.NotBuffered)
+            .Select(file => ProcessFile(file, engine, mode, cache));
+
+        foreach (var outcome in outcomes)
         {
-            var fileStart = Stopwatch.GetTimestamp();
-            var source = File.ReadAllText(file);
-            var options = cache is null ? null : engine.OptionsFor(file);
-            var checksum = cache is null ? null : FormatCache.Checksum(source, options!);
-
-            if (cache is not null && cache.IsUpToDate(file, checksum!))
+            switch (outcome.Status)
             {
-                unchanged++;
-                if (verbose)
-                {
-                    output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms (cached)");
-                }
+                case FileStatus.Cached:
+                    unchanged++;
+                    if (verbose)
+                    {
+                        output.WriteLine(
+                            $"{DisplayPath(root, outcome.File)} {outcome.Millis}ms (cached)"
+                        );
+                    }
 
-                continue;
-            }
+                    break;
 
-            var result = engine.Format(file, source);
+                case FileStatus.Error:
+                    Report(outcome.File, outcome.Result!);
+                    exitCode = ExitError;
+                    break;
 
-            if (result.HasErrors)
-            {
-                Report(file, result);
-                exitCode = ExitError;
-                cache?.Forget(file);
-                continue;
-            }
+                case FileStatus.Unchanged:
+                    if (mode == RunMode.Format)
+                    {
+                        unchanged++;
+                        if (verbose)
+                        {
+                            output.WriteLine(
+                                $"{DisplayPath(root, outcome.File)} {outcome.Millis}ms (unchanged)"
+                            );
+                        }
+                    }
 
-            if (mode is RunMode.Check or RunMode.Diff)
-            {
-                if (!result.Changed)
-                {
-                    continue;
-                }
+                    break;
 
-                if (mode == RunMode.Diff)
-                {
-                    output.Write(UnifiedDiff.Create(file, source, result.Text));
-                }
-                else
-                {
-                    output.WriteLine($"{file}: would be reformatted.");
-                }
+                case FileStatus.WouldChange:
+                    if (mode == RunMode.Diff)
+                    {
+                        output.Write(
+                            UnifiedDiff.Create(outcome.File, outcome.Source!, outcome.Result!.Text)
+                        );
+                    }
+                    else
+                    {
+                        output.WriteLine($"{outcome.File}: would be reformatted.");
+                    }
 
-                if (exitCode == ExitOk)
-                {
-                    exitCode = ExitWouldChange;
-                }
+                    if (exitCode == ExitOk)
+                    {
+                        exitCode = ExitWouldChange;
+                    }
 
-                continue;
-            }
+                    break;
 
-            if (result.Changed)
-            {
-                File.WriteAllText(file, result.Text);
-                formatted++;
-                cache?.Record(file, FormatCache.Checksum(result.Text, options!));
-                if (verbose)
-                {
-                    output.WriteLine($"{DisplayPath(root, file)} {Millis(fileStart)}ms");
-                }
-            }
-            else
-            {
-                unchanged++;
-                cache?.Record(file, checksum!);
-                if (verbose)
-                {
-                    output.WriteLine(
-                        $"{DisplayPath(root, file)} {Millis(fileStart)}ms (unchanged)"
-                    );
-                }
+                case FileStatus.Formatted:
+                    formatted++;
+                    if (verbose)
+                    {
+                        output.WriteLine($"{DisplayPath(root, outcome.File)} {outcome.Millis}ms");
+                    }
+
+                    break;
             }
         }
 
@@ -244,6 +273,53 @@ internal static class Program
         }
 
         return exitCode;
+    }
+
+    private static FileOutcome ProcessFile(
+        string file,
+        FormatterEngine engine,
+        RunMode mode,
+        FormatCache? cache
+    )
+    {
+        var fileStart = Stopwatch.GetTimestamp();
+        var source = File.ReadAllText(file);
+        var options = cache is null ? null : engine.OptionsFor(file);
+        var checksum = cache is null ? null : FormatCache.Checksum(source, options!);
+
+        if (cache is not null && cache.IsUpToDate(file, checksum!))
+        {
+            return new FileOutcome(file, FileStatus.Cached, Millis(fileStart), source, null);
+        }
+
+        var result = engine.Format(file, source);
+
+        if (result.HasErrors)
+        {
+            cache?.Forget(file);
+            return new FileOutcome(file, FileStatus.Error, Millis(fileStart), source, result);
+        }
+
+        if (mode is RunMode.Check or RunMode.Diff)
+        {
+            return new FileOutcome(
+                file,
+                result.Changed ? FileStatus.WouldChange : FileStatus.Unchanged,
+                Millis(fileStart),
+                source,
+                result
+            );
+        }
+
+        if (result.Changed)
+        {
+            File.WriteAllText(file, result.Text);
+            cache?.Record(file, FormatCache.Checksum(result.Text, options!));
+            return new FileOutcome(file, FileStatus.Formatted, Millis(fileStart), source, result);
+        }
+
+        cache?.Record(file, checksum!);
+        return new FileOutcome(file, FileStatus.Unchanged, Millis(fileStart), source, result);
     }
 
     private static long Millis(long start) =>

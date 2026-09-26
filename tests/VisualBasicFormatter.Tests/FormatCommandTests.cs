@@ -146,6 +146,67 @@ public sealed class FormatCommandTests : IDisposable
     }
 
     [Fact]
+    public void FormatsManyFilesAcrossSubdirectoriesInResolveOrder()
+    {
+        var expectedOrder = new List<string>();
+        for (var i = 0; i < 50; i++)
+        {
+            var dir = Path.Combine(_root, $"dir{i % 5}");
+            Directory.CreateDirectory(dir);
+            var name = $"Sample{i:D3}.vb";
+            expectedOrder.Add(Write(Path.Combine(dir, name), Unformatted));
+        }
+
+        var output = new StringWriter();
+
+        var exitCode = Run(output, verbose: true, summary: true);
+
+        Assert.Equal(ExitOk, exitCode);
+        Assert.Contains("50 formatted, 0 unchanged in ", output.ToString());
+        foreach (var file in expectedOrder)
+        {
+            Assert.Equal(Formatted(Unformatted), File.ReadAllText(file));
+        }
+
+        var verboseLines = Lines(output).Where(line => line.Contains(".vb ")).ToList();
+        var expectedDisplayOrder = Program
+            .Resolve([_root])
+            .Select(f => Path.GetRelativePath(_root, f).Replace('\\', '/'))
+            .ToList();
+
+        Assert.Equal(expectedDisplayOrder.Count, verboseLines.Count);
+        for (var i = 0; i < expectedDisplayOrder.Count; i++)
+        {
+            Assert.StartsWith(expectedDisplayOrder[i] + " ", verboseLines[i]);
+        }
+    }
+
+    [Fact]
+    public void AConfigThatFailsToParseAbortsTheWholeRunWithExitCodeTwo()
+    {
+        File.WriteAllText(Path.Combine(_root, ".vbfmtrc"), "{ not json");
+        for (var i = 0; i < 20; i++)
+        {
+            Write($"Sample{i}.vb", Unformatted);
+        }
+
+        var exitCode = Program.Guarded(() =>
+            Program.RunFiles(
+                [_root],
+                _root,
+                IgnoreSet.Empty,
+                new FormatterEngine(new OptionOverrides()),
+                RunMode.Format,
+                verbose: false,
+                summary: false,
+                new StringWriter()
+            )
+        );
+
+        Assert.Equal(2, exitCode);
+    }
+
+    [Fact]
     public void CheckCommandAcceptsDiff()
     {
         var parseResult = CliCommands.CreateCheckCommand().Parse(["--diff"]);

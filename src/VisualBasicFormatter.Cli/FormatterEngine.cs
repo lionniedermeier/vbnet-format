@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using VisualBasicFormatter;
 
 namespace VisualBasicFormatter.Cli;
@@ -6,10 +7,10 @@ internal sealed class FormatterEngine
 {
     private readonly OptionOverrides _overrides;
     private readonly string? _pinnedConfigPath;
-    private readonly Dictionary<string, FormatterOptions> _optionsByDirectory = new(
+    private readonly ConcurrentDictionary<string, Lazy<FormatterOptions>> _optionsByDirectory = new(
         StringComparer.OrdinalIgnoreCase
     );
-    private readonly Dictionary<string, ConfigFile> _configByPath = new(
+    private readonly ConcurrentDictionary<string, Lazy<ConfigFile>> _configByPath = new(
         StringComparer.OrdinalIgnoreCase
     );
 
@@ -38,33 +39,21 @@ internal sealed class FormatterEngine
     public FormatResult FormatStandardInput(string source) =>
         VbFormatter.Format(source, OptionsForDirectory(Directory.GetCurrentDirectory()));
 
-    private FormatterOptions OptionsForDirectory(string directory)
-    {
-        if (_optionsByDirectory.TryGetValue(directory, out var cached))
-        {
-            return cached;
-        }
+    private FormatterOptions OptionsForDirectory(string directory) =>
+        _optionsByDirectory
+            .GetOrAdd(directory, d => new Lazy<FormatterOptions>(() => ResolveOptions(d)))
+            .Value;
 
+    private FormatterOptions ResolveOptions(string directory)
+    {
         var configPath = _pinnedConfigPath ?? ConfigLocator.Find(directory);
         var config = configPath is null ? null : LoadConfig(configPath);
 
-        var options = _overrides.ApplyTo(
+        return _overrides.ApplyTo(
             config?.ApplyTo(new FormatterOptions()) ?? new FormatterOptions()
         );
-
-        _optionsByDirectory[directory] = options;
-        return options;
     }
 
-    private ConfigFile LoadConfig(string path)
-    {
-        if (_configByPath.TryGetValue(path, out var cached))
-        {
-            return cached;
-        }
-
-        var config = ConfigFile.Load(path);
-        _configByPath[path] = config;
-        return config;
-    }
+    private ConfigFile LoadConfig(string path) =>
+        _configByPath.GetOrAdd(path, p => new Lazy<ConfigFile>(() => ConfigFile.Load(p))).Value;
 }

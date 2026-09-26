@@ -109,6 +109,28 @@ public sealed class ConfigResolutionTests : IDisposable
     }
 
     [Fact]
+    public void ResolvesTheSameConfigConcurrentlyFromManyDirectories()
+    {
+        WriteConfig(Path.Combine(_root, ".vbfmtrc"), """{ "printWidth": 97 }""");
+        var files = Enumerable
+            .Range(0, 64)
+            .Select(i => WriteVb(Path.Combine(_root, $"dir{i}", "Sample.vb")))
+            .ToList();
+
+        var engine = new FormatterEngine(new OptionOverrides());
+
+        var options = files.AsParallel().Select(engine.OptionsFor).ToList();
+
+        Assert.All(options, o => Assert.Equal(97, o.PrintWidth));
+
+        var sameDirectoryOptions = files.AsParallel().Select(engine.OptionsFor).ToList();
+        for (var i = 0; i < files.Count; i++)
+        {
+            Assert.Same(options[i], sameDirectoryOptions[i]);
+        }
+    }
+
+    [Fact]
     public void PrefersVbfmtrcOverItsJsonNamedSibling()
     {
         WriteConfig(Path.Combine(_root, ".vbfmtrc"), """{ "printWidth": 11 }""");

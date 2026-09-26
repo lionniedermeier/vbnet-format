@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Hashing;
 using System.Reflection;
 using System.Text;
@@ -15,11 +16,11 @@ internal sealed class FormatCache
             ?.InformationalVersion
         ?? string.Empty;
 
-    private readonly Dictionary<string, string> _entries;
+    private readonly ConcurrentDictionary<string, string> _entries;
     private readonly string _path;
-    private bool _dirty;
+    private int _dirty;
 
-    private FormatCache(string path, Dictionary<string, string> entries)
+    private FormatCache(string path, ConcurrentDictionary<string, string> entries)
     {
         _path = path;
         _entries = entries;
@@ -45,7 +46,10 @@ internal sealed class FormatCache
 
             return new FormatCache(
                 path,
-                new Dictionary<string, string>(entries ?? [], StringComparer.OrdinalIgnoreCase)
+                new ConcurrentDictionary<string, string>(
+                    entries ?? [],
+                    StringComparer.OrdinalIgnoreCase
+                )
             );
         }
         catch (Exception ex)
@@ -53,7 +57,7 @@ internal sealed class FormatCache
         {
             return new FormatCache(
                 path,
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             );
         }
     }
@@ -64,20 +68,20 @@ internal sealed class FormatCache
     public void Record(string file, string checksum)
     {
         _entries[Path.GetFullPath(file)] = checksum;
-        _dirty = true;
+        Volatile.Write(ref _dirty, 1);
     }
 
     public void Forget(string file)
     {
-        if (_entries.Remove(Path.GetFullPath(file)))
+        if (_entries.TryRemove(Path.GetFullPath(file), out _))
         {
-            _dirty = true;
+            Volatile.Write(ref _dirty, 1);
         }
     }
 
     public void Save()
     {
-        if (!_dirty)
+        if (Volatile.Read(ref _dirty) == 0)
         {
             return;
         }
@@ -92,7 +96,7 @@ internal sealed class FormatCache
         File.WriteAllText(
             tempPath,
             JsonSerializer.Serialize(
-                _entries,
+                new Dictionary<string, string>(_entries, StringComparer.OrdinalIgnoreCase),
                 FormatCacheJsonContext.Default.DictionaryStringString
             )
         );
